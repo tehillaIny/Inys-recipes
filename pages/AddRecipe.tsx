@@ -5,7 +5,7 @@ import { addRecipe, getTags, addTag } from "@/firebaseService";
 import ImportFromUrl from "@/components/Recipes/ImportFromUrl";
 import RecipeForm from "@/components/Recipes/RecipeForm";
 import { ChevronRight, PenLine, Link2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 
 type Tag = { id: string; name: string };
 type Recipe = {

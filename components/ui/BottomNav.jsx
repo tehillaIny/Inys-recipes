@@ -1,36 +1,31 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useRouter } from 'next/router';
 import { BookOpen, Grid3X3, Plus, Link2, PenLine } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 
 export default function BottomNav() {
-  const location = useLocation();
+  const router = useRouter();
   const [addMenuOpen, setAddMenuOpen] = useState(false);
-  
-  const isActive = (path) => {
-    return location.pathname.includes(path);
+
+  const isActive = (path) => router.pathname.includes(path);
+
+  const navigate = (path) => {
+    setAddMenuOpen(false);
+    router.push(path);
   };
 
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-50">
         <div className="flex items-center justify-around h-16 max-w-lg mx-auto relative">
-          <Link 
-            to={createPageUrl("AllRecipes")}
+          <button
+            onClick={() => navigate("/all-recipes")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('AllRecipes') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/all-recipes') ? 'text-amber-600' : 'text-gray-500'
             }`}
           >
             <BookOpen className="w-5 h-5" />
             <span className="text-xs mt-1 font-medium">כל המתכונים</span>
-          </Link>
+          </button>
 
           <div className="flex-1 flex justify-center">
             <button
@@ -41,27 +36,23 @@ export default function BottomNav() {
             </button>
           </div>
 
-          <Link 
-            to={createPageUrl("Categories")}
+          <button
+            onClick={() => navigate("/categories")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('Categories') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/categories') ? 'text-amber-600' : 'text-gray-500'
             }`}
           >
             <Grid3X3 className="w-5 h-5" />
             <span className="text-xs mt-1 font-medium">קטגוריות</span>
-          </Link>
+          </button>
         </div>
       </nav>
 
-      <Sheet open={addMenuOpen} onOpenChange={setAddMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl pb-safe">
-          <SheetHeader className="pb-4">
-            <SheetTitle className="text-center">הוספת מתכון</SheetTitle>
-          </SheetHeader>
-          <div className="grid grid-cols-2 gap-4 pb-4">
-            <Link
-              to={createPageUrl("AddRecipe")}
-              onClick={() => setAddMenuOpen(false)}
+      {addMenuOpen && (
+        <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setAddMenuOpen(false)}>
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 grid grid-cols-2 gap-4">
+            <button
+              onClick={() => navigate("/add-recipe")}
               className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">
@@ -69,11 +60,10 @@ export default function BottomNav() {
               </div>
               <span className="font-medium text-gray-800">הזנה ידנית</span>
               <span className="text-xs text-gray-500 mt-1">כתוב מתכון חדש</span>
-            </Link>
+            </button>
             
-            <Link
-              to={createPageUrl("AddRecipe") + "?mode=import"}
-              onClick={() => setAddMenuOpen(false)}
+            <button
+              onClick={() => navigate("/add-recipe?mode=import")}
               className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">
@@ -81,10 +71,10 @@ export default function BottomNav() {
               </div>
               <span className="font-medium text-gray-800">ייבוא מקישור</span>
               <span className="text-xs text-gray-500 mt-1">העתק מהאינטרנט</span>
-            </Link>
+            </button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
     </>
   );
 }
