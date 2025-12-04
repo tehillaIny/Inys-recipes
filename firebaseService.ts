@@ -7,35 +7,60 @@ export interface Tag {
   name: string;
 }
 
+// ---------------------- RECIPES ----------------------
+
 // הוספת מתכון
 export async function addRecipe(data: any) {
-  const recipesRef = collection(db, "recipes");
-  await addDoc(recipesRef, data);
+  try {
+    const recipesRef = collection(db, "recipes");
+    const docRef = await addDoc(recipesRef, data);
+    console.log("מתכון נוסף עם ID:", docRef.id);
+    return docRef;
+  } catch (err) {
+    console.error("שגיאה בהוספת מתכון:", err);
+    throw err;
+  }
 }
+
+// הבאת כל המתכונים
+export async function getRecipes() {
+  try {
+    const recipesRef = collection(db, "recipes");
+    const snapshot = await getDocs(recipesRef);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (err) {
+    console.error("שגיאה בשליפת מתכונים:", err);
+    return [];
+  }
+}
+
+// ---------------------- TAGS ----------------------
 
 // הבאת כל התגיות
 export async function getTags(): Promise<Tag[]> {
-  const tagsRef = collection(db, "tags");
-  const snapshot = await getDocs(tagsRef);
-
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    name: doc.data().name ?? "" // ודא שתמיד מחזיר name
-  }));
+  try {
+    const tagsRef = collection(db, "tags");
+    const snapshot = await getDocs(tagsRef);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      name: doc.data().name ?? ""
+    }));
+  } catch (err) {
+    console.error("שגיאה בשליפת תגיות:", err);
+    return [];
+  }
 }
 
 // הוספת תגית חדשה
 export async function addTag(name: string) {
-  const tagsRef = collection(db, "tags");
-  await addDoc(tagsRef, { name });
-}
-
-export async function getRecipes() {
-  const recipesRef = collection(db, "recipes");
-  const snapshot = await getDocs(recipesRef);
-
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  try {
+    const tagsRef = collection(db, "tags");
+    await addDoc(tagsRef, { name });
+  } catch (err) {
+    console.error("שגיאה בהוספת תגית:", err);
+    throw err;
+  }
 }

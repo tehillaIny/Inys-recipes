@@ -52,7 +52,7 @@ export default function BottomNav() {
         <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setAddMenuOpen(false)}>
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 grid grid-cols-2 gap-4">
             <button
-              onClick={() => navigate("/add-recipe")}
+              onClick={() => navigate("/AddRecipe")}
               className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">
@@ -63,7 +63,7 @@ export default function BottomNav() {
             </button>
             
             <button
-              onClick={() => navigate("/add-recipe?mode=import")}
+              onClick={() => navigate("/AddRecipe?mode=import")}
               className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">

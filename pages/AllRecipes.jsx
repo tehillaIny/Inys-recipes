@@ -3,14 +3,13 @@ import RecipeCard from '@/components/recipes/RecipeCard';
 import SearchAndFilter from '@/components/recipes/SearchAndFilter';
 import CsvExportImport from '@/components/recipes/CsvExportImport';
 import { Loader2, ChefHat, UtensilsCrossed } from "lucide-react";
-import { getRecipes, getTags } from '@/firebaseService';
+import { getRecipes, getTags, addRecipe } from '@/firebaseService';
 
 export default function AllRecipes() {
-  // Get tag from URL
+  // קבלת תגית מה-URL
   const urlParams = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search)
     : null;
-
   const tagFromUrl = urlParams?.get('tag') || null;
 
   // State
@@ -22,23 +21,28 @@ export default function AllRecipes() {
   const [selectedTags, setSelectedTags] = useState(tagFromUrl ? [tagFromUrl] : []);
   const [sortOrder, setSortOrder] = useState('newest');
 
-  // Load Recipes + Tags
+  // ---------------------- Load Recipes + Tags ----------------------
   async function loadData() {
     setIsLoading(true);
-    const [recipesData, tagsData] = await Promise.all([
-      getRecipes(),
-      getTags()
-    ]);
-    setRecipes(recipesData);
-    setTags(tagsData);
-    setIsLoading(false);
+    try {
+      const [recipesData, tagsData] = await Promise.all([
+        getRecipes(),
+        getTags()
+      ]);
+      setRecipes(recipesData);
+      setTags(tagsData);
+    } catch (err) {
+      console.error("❌ שגיאה בטעינת מתכונים או תגיות:", err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Filtering + Sorting
+  // ---------------------- Filtering + Sorting ----------------------
   const filteredRecipes = useMemo(() => {
     let result = [...recipes];
 
@@ -74,7 +78,43 @@ export default function AllRecipes() {
     return result;
   }, [recipes, searchQuery, selectedTags, sortOrder]);
 
-  // Loading Indicator
+  // ---------------------- CSV Import Handler ----------------------
+  async function handleCsvImport(importedRecipes) {
+    console.log("📦 קיבלתי מתכונים מה-CSV:", importedRecipes);
+
+    if (!Array.isArray(importedRecipes)) {
+      console.error("❌ importedRecipes לא מערך", importedRecipes);
+      return;
+    }
+
+    let success = 0;
+    let failed = 0;
+
+    for (const recipe of importedRecipes) {
+      try {
+        await addRecipe({
+          name: recipe.name ?? "",
+          description: recipe.description ?? "",
+          ingredients: recipe.ingredients ?? "",
+          method: recipe.method ?? "",
+          tags: recipe.tags ?? [],
+          created_date: new Date().toISOString(),
+          imageUrl: recipe.imageUrl ?? "",
+          sourceUrl: recipe.sourceUrl ?? ""
+        });
+        console.log("✔ נשמר מתכון:", recipe.name);
+        success++;
+      } catch (err) {
+        console.error("❌ שגיאה בשמירת מתכון:", recipe, err);
+        failed++;
+      }
+    }
+
+    console.log(`🏁 ייבוא CSV הסתיים — הצלחות: ${success}, כשלונות: ${failed}`);
+    await loadData(); // טוען מחדש את כל המתכונים מה-Firestore
+  }
+
+  // ---------------------- Loading Indicator ----------------------
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -83,6 +123,7 @@ export default function AllRecipes() {
     );
   }
 
+  // ---------------------- Render ----------------------
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white pb-24">
       {/* HEADER */}
@@ -102,7 +143,7 @@ export default function AllRecipes() {
             </div>
 
             {/* CSV Import/Export */}
-            <CsvExportImport recipes={recipes} onImportComplete={loadData} />
+            <CsvExportImport recipes={recipes} onImport={handleCsvImport} />
           </div>
 
           {/* FILTER BAR */}
