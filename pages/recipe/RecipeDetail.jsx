@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  ChevronRight, 
-  Pencil, 
-  Trash2, 
-  Clock, 
+import {
+  ChevronRight,
+  Pencil,
+  Trash2,
+  Clock,
   ExternalLink,
   Loader2,
   Share2,
@@ -28,31 +27,53 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function RecipeDetail() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const recipeId = urlParams.get('id');
+  const router = useRouter();
+  const { id: recipeId } = router.query;
+
+  const [recipe, setRecipe] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const { data: recipe, isLoading } = useQuery({
-    queryKey: ['recipe', recipeId],
-    queryFn: async () => {
-      const recipes = await base44.entities.Recipe.filter({ id: recipeId });
-      return recipes[0];
-    },
-    enabled: !!recipeId,
-  });
+  useEffect(() => {
+    if (!recipeId) return;
+
+    const fetchRecipe = async () => {
+      setIsLoading(true);
+      try {
+        const docRef = doc(db, "recipes", recipeId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setRecipe({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          setRecipe(null);
+        }
+      } catch (err) {
+        console.error("שגיאה בטעינת המתכון:", err);
+        setRecipe(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecipe();
+  }, [recipeId]);
 
   const handleDelete = async () => {
+    if (!recipeId) return;
     setDeleting(true);
-    await base44.entities.Recipe.delete(recipeId);
-    queryClient.invalidateQueries(['recipes']);
-    navigate(createPageUrl("AllRecipes"));
+    try {
+      await deleteDoc(doc(db, "recipes", recipeId));
+      router.push('/AllRecipes');
+    } catch (err) {
+      console.error("שגיאה במחיקת המתכון:", err);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    if (navigator.share && recipe) {
       await navigator.share({
         title: recipe.name,
         text: recipe.description || recipe.name,
@@ -74,7 +95,7 @@ export default function RecipeDetail() {
       <div className="min-h-screen flex items-center justify-center p-4 text-center">
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">המתכון לא נמצא</h2>
-          <Button onClick={() => navigate(createPageUrl("AllRecipes"))}>
+          <Button onClick={() => router.push('/AllRecipes')}>
             חזור לכל המתכונים
           </Button>
         </div>
@@ -95,14 +116,14 @@ export default function RecipeDetail() {
           onError={(e) => e.target.src = defaultImage}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        
+
         {/* Header Actions */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
           <Button
             variant="secondary"
             size="icon"
             className="bg-white/90 backdrop-blur-sm hover:bg-white"
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
           >
             <ChevronRight className="w-5 h-5" />
           </Button>
@@ -119,7 +140,7 @@ export default function RecipeDetail() {
               variant="secondary"
               size="icon"
               className="bg-white/90 backdrop-blur-sm hover:bg-white"
-              onClick={() => navigate(createPageUrl("EditRecipe") + `?id=${recipeId}`)}
+              onClick={() => router.push(`/EditRecipe?id=${recipeId}`)}
             >
               <Pencil className="w-4 h-4" />
             </Button>
@@ -142,7 +163,7 @@ export default function RecipeDetail() {
           <div className="flex items-center gap-4 text-white/80 text-sm">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {format(new Date(recipe.created_date), 'dd/MM/yyyy')}
+              {recipe.created_date ? format(new Date(recipe.created_date), 'dd/MM/yyyy') : '-'}
             </span>
             {recipe.sourceUrl && (
               <a 

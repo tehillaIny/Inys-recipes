@@ -4,6 +4,7 @@ import SearchAndFilter from '@/components/recipes/SearchAndFilter';
 import CsvExportImport from '@/components/recipes/CsvExportImport';
 import { Loader2, ChefHat, UtensilsCrossed } from "lucide-react";
 import { getRecipes, getTags, addRecipe } from '@/firebaseService';
+import Link from 'next/link';
 
 export default function AllRecipes() {
   // קבלת תגית מה-URL
@@ -176,11 +177,13 @@ export default function AllRecipes() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredRecipes.map(recipe => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filteredRecipes.map(recipe => (
+            <Link key={recipe.id} href={`/recipe/${recipe.id}`} passHref>
+              <RecipeCard recipe={recipe} />
+              </Link>
             ))}
-          </div>
+        </div>
         )}
       </main>
     </div>
