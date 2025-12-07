@@ -102,7 +102,7 @@ export default function RecipeDetail() {
   const defaultImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop";
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-white pb-24 text-right" dir="rtl">
       {/* Hero Image */}
       <div className="relative h-72 sm:h-96">
         <img 
@@ -146,11 +146,11 @@ export default function RecipeDetail() {
         </div>
 
         {/* Title */}
-        <div className="absolute bottom-0 left-0 right-0 p-6">
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-right">
           <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
             {recipe.name}
           </h1>
-          <div className="flex items-center gap-4 text-white/80 text-sm">
+          <div className="flex items-center gap-4 text-white/80 text-sm justify-end">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               {recipe.created_date ? format(new Date(recipe.created_date), 'dd/MM/yyyy') : '-'}
@@ -171,10 +171,10 @@ export default function RecipeDetail() {
       </div>
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-6 space-y-6 text-right">
         {/* Tags */}
         {recipe.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             {recipe.tags.map((tag, i) => (
               <Badge 
                 key={i}
@@ -188,25 +188,34 @@ export default function RecipeDetail() {
 
         {/* Description */}
         {recipe.description && (
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className="text-gray-600 text-lg leading-relaxed text-right">
             {recipe.description}
           </p>
         )}
 
         {/* Ingredients */}
         {recipe.ingredients && (
-          <section className="bg-amber-50 rounded-2xl p-5">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center">
+          <section className="bg-amber-50 rounded-2xl p-5" dir="rtl">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse items-center gap-2 justify-end text-right">
+              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-4 h-4 text-amber-700" />
               </div>
               מרכיבים
             </h2>
+
             <div className="space-y-2">
               {recipe.ingredients.split('\n').filter(Boolean).map((line, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-700">{line}</span>
+                <div
+                  key={i}
+                  className="flex items-start gap-3"
+                  style={{ direction: "rtl" }}
+                >
+                  {/* נקודה מימין */}
+                  <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0" style={{ order: 0 }} />
+                  {/* טקסט */}
+                  <span className="text-gray-700 text-right w-full" style={{ order: 1 }}>
+                    {line}
+                  </span>
                 </div>
               ))}
             </div>
@@ -215,15 +224,31 @@ export default function RecipeDetail() {
 
         {/* Method */}
         {recipe.method && (
-          <section>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">אופן הכנה</h2>
+          <section className="text-right" dir="rtl">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse justify-end text-right">
+              אופן הכנה
+            </h2>
+
             <div className="space-y-4">
               {recipe.method.split('\n').filter(Boolean).map((step, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                <div
+                  key={i}
+                  className="flex items-start gap-4"
+                  style={{ direction: "rtl" }}
+                >
+                  {/* מספר מימין */}
+                  <div
+                    className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500
+                              rounded-full flex items-center justify-center
+                              text-white font-bold text-sm flex-shrink-0"
+                    style={{ order: 0 }}
+                  >
                     {i + 1}
                   </div>
-                  <p className="text-gray-700 pt-1 leading-relaxed">{step}</p>
+                  {/* טקסט */}
+                  <p className="text-gray-700 leading-relaxed text-right w-full" style={{ order: 1 }}>
+                    {step}
+                  </p>
                 </div>
               ))}
             </div>
