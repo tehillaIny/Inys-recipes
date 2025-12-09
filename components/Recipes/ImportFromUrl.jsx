@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Link2, Loader2, Sparkles, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ImportFromUrl({ onImport, onCancel }) {
   const [url, setUrl] = useState('');
@@ -47,8 +42,9 @@ export default function ImportFromUrl({ onImport, onCancel }) {
   };
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardContent className="p-6 space-y-4">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 max-w-md mx-auto">
+      <div className="space-y-4">
+        {/* כותרת ואייקון */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-white" />
@@ -57,34 +53,41 @@ export default function ImportFromUrl({ onImport, onCancel }) {
           <p className="text-gray-500 text-sm mt-1">הדבק קישור למתכון ואנחנו נחלץ את הפרטים אוטומטית</p>
         </div>
 
+        {/* שדה קלט */}
         <div className="space-y-2">
-          <Label htmlFor="url" className="text-gray-700 font-medium">קישור למתכון</Label>
+          <label htmlFor="url" className="block text-sm font-medium text-gray-700">
+            קישור למתכון
+          </label>
           <div className="relative">
-            <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <Link2 className="w-4 h-4 text-gray-400" />
+            </div>
+            <input
               id="url"
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://..."
-              className="bg-white border-gray-200 focus:border-amber-400 pl-10"
+              className="w-full pl-10 pr-3 py-2 bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-gray-900 placeholder-gray-400"
               dir="ltr"
             />
           </div>
         </div>
 
+        {/* הודעת שגיאה */}
         {error && (
-          <Alert variant="destructive" className="bg-red-50 border-red-200">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2 text-sm text-red-600">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
 
+        {/* כפתורים */}
         <div className="flex gap-3 pt-2">
-          <Button 
+          <button
             onClick={handleImport}
-            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
             disabled={loading || !url.trim()}
+            className="flex-1 flex items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -97,12 +100,16 @@ export default function ImportFromUrl({ onImport, onCancel }) {
                 ייבא מתכון
               </>
             )}
-          </Button>
-          <Button variant="outline" onClick={onCancel}>
+          </button>
+          
+          <button
+            onClick={onCancel}
+            className="py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+          >
             ביטול
-          </Button>
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

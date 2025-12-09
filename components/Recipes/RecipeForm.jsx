@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { base44 } from '@/api/base44Client';
-import { X, Plus, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { getTags, addTag } from "@/firebaseService";
+import { Plus, Loader2, Image as ImageIcon } from "lucide-react";
 
 export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
@@ -20,8 +14,8 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
   });
   const [allTags, setAllTags] = useState([]);
   const [newTag, setNewTag] = useState('');
-  const [uploading, setUploading] = useState(false);
 
+  // טעינת נתונים בעריכה
   useEffect(() => {
     if (recipe) {
       setFormData({
@@ -36,13 +30,18 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     }
   }, [recipe]);
 
+  // טעינת תגיות
   useEffect(() => {
     loadTags();
   }, []);
 
   const loadTags = async () => {
-    const tags = await base44.entities.Tag.list();
-    setAllTags(tags);
+    try {
+      const tags = await getTags();
+      setAllTags(tags);
+    } catch (error) {
+      console.error("Failed to load tags:", error);
+    }
   };
 
   const handleChange = (field, value) => {
@@ -58,25 +57,20 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
   };
 
   const addNewTag = async () => {
-    if (newTag.trim() && !allTags.find(t => t.name === newTag.trim())) {
-      await base44.entities.Tag.create({ name: newTag.trim() });
-      await loadTags();
-      handleChange('tags', [...formData.tags, newTag.trim()]);
-      setNewTag('');
-    } else if (newTag.trim()) {
-      toggleTag(newTag.trim());
+    const trimmedTag = newTag.trim();
+    if (trimmedTag && !allTags.find(t => t.name === trimmedTag)) {
+      try {
+        await addTag(trimmedTag);
+        await loadTags();
+        handleChange('tags', [...formData.tags, trimmedTag]);
+        setNewTag('');
+      } catch (error) {
+        console.error("Error adding tag:", error);
+      }
+    } else if (trimmedTag) {
+      toggleTag(trimmedTag);
       setNewTag('');
     }
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    handleChange('imageUrl', file_url);
-    setUploading(false);
   };
 
   const handleSubmit = (e) => {
@@ -85,160 +79,156 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     onSave(formData);
   };
 
+  // מחלקות עיצוב משותפות (Tailwind)
+  const inputClass = "w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all";
+  const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+  const buttonBaseClass = "px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name" className="text-gray-700 font-medium">שם המתכון *</Label>
-        <Input
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-1 rounded-lg">
+      
+      {/* שם המתכון */}
+      <div>
+        <label htmlFor="name" className={labelClass}>שם המתכון *</label>
+        <input
           id="name"
+          type="text"
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="למשל: עוגת שוקולד"
-          className="bg-white border-gray-200 focus:border-amber-400"
+          className={inputClass}
           required
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description" className="text-gray-700 font-medium">תיאור קצר</Label>
-        <Textarea
+      {/* תיאור קצר */}
+      <div>
+        <label htmlFor="description" className={labelClass}>תיאור קצר</label>
+        <textarea
           id="description"
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="תיאור קצר של המתכון..."
-          className="bg-white border-gray-200 focus:border-amber-400 h-20"
+          className={`${inputClass} h-20 resize-none`}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-gray-700 font-medium">תגיות</Label>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {allTags.map((tag) => (
-            <Badge
-              key={tag.id}
-              variant={formData.tags.includes(tag.name) ? "default" : "outline"}
-              className={`cursor-pointer transition-all ${
-                formData.tags.includes(tag.name) 
-                  ? 'bg-amber-500 hover:bg-amber-600' 
-                  : 'hover:bg-amber-50 hover:border-amber-300'
-              }`}
-              onClick={() => toggleTag(tag.name)}
-            >
-              {tag.name}
-            </Badge>
-          ))}
+      {/* תגיות */}
+      <div>
+        <label className={labelClass}>תגיות</label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {allTags.map((tag) => {
+            const isSelected = formData.tags.includes(tag.name);
+            return (
+              <span
+                key={tag.id}
+                onClick={() => toggleTag(tag.name)}
+                className={`cursor-pointer inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors select-none ${
+                  isSelected 
+                    ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600' 
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-amber-50 hover:border-amber-300'
+                }`}
+              >
+                {tag.name}
+              </span>
+            );
+          })}
         </div>
         <div className="flex gap-2">
-          <Input
+          <input
+            type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             placeholder="הוסף תגית חדשה..."
-            className="bg-white border-gray-200 focus:border-amber-400"
+            className={inputClass}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addNewTag())}
           />
-          <Button type="button" variant="outline" onClick={addNewTag}>
+          <button 
+            type="button" 
+            onClick={addNewTag}
+            className="flex items-center justify-center px-3 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            title="הוסף תגית"
+          >
             <Plus className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-gray-700 font-medium">תמונה</Label>
-        <div className="flex gap-3 items-start">
-          {formData.imageUrl ? (
-            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
-              <img 
-                src={formData.imageUrl} 
-                alt="תמונת מתכון"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => handleChange('imageUrl', '')}
-                className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 transition-colors">
-              {uploading ? (
-                <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
-              ) : (
-                <>
-                  <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-500">העלאת תמונה</span>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
-          )}
-          <div className="flex-1">
-            <Input
-              value={formData.imageUrl}
-              onChange={(e) => handleChange('imageUrl', e.target.value)}
-              placeholder="או הדבק קישור לתמונה..."
-              className="bg-white border-gray-200 focus:border-amber-400"
-            />
+      {/* תמונה (URL) */}
+      <div>
+        <label htmlFor="imageUrl" className={labelClass}>תמונה (URL)</label>
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <ImageIcon className="w-4 h-4 text-gray-400" />
           </div>
+          <input
+            id="imageUrl"
+            type="url"
+            value={formData.imageUrl}
+            onChange={(e) => handleChange('imageUrl', e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            className={`${inputClass} pl-10`}
+            dir="ltr"
+          />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="ingredients" className="text-gray-700 font-medium">מרכיבים</Label>
-        <Textarea
+      {/* רכיבים */}
+      <div>
+        <label htmlFor="ingredients" className={labelClass}>רכיבים</label>
+        <textarea
           id="ingredients"
           value={formData.ingredients}
           onChange={(e) => handleChange('ingredients', e.target.value)}
-          placeholder="כתוב כל מרכיב בשורה נפרדת..."
-          className="bg-white border-gray-200 focus:border-amber-400 h-40 font-mono text-sm"
+          placeholder="רשימת רכיבים..."
+          className={`${inputClass} h-32`}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="method" className="text-gray-700 font-medium">אופן הכנה</Label>
-        <Textarea
+      {/* הוראות הכנה */}
+      <div>
+        <label htmlFor="method" className={labelClass}>הוראות הכנה</label>
+        <textarea
           id="method"
           value={formData.method}
           onChange={(e) => handleChange('method', e.target.value)}
-          placeholder="כתוב את שלבי ההכנה..."
-          className="bg-white border-gray-200 focus:border-amber-400 h-48"
+          placeholder="שלבי ההכנה..."
+          className={`${inputClass} h-32`}
         />
       </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="sourceUrl" className="text-gray-700 font-medium">קישור למקור (אופציונלי)</Label>
-        <Input
+      
+      {/* קישור למקור */}
+      <div>
+        <label htmlFor="sourceUrl" className={labelClass}>קישור למקור</label>
+        <input
           id="sourceUrl"
           type="url"
           value={formData.sourceUrl}
           onChange={(e) => handleChange('sourceUrl', e.target.value)}
           placeholder="https://..."
-          className="bg-white border-gray-200 focus:border-amber-400"
+          className={inputClass}
           dir="ltr"
         />
       </div>
 
-      <div className="flex gap-3 pt-4">
-        <Button 
-          type="submit" 
-          className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
-          disabled={isLoading || !formData.name.trim()}
+      {/* כפתורים - ביטול ושמירה */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+        <button 
+          type="button" 
+          onClick={onCancel}
+          className={`${buttonBaseClass} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`}
         >
-          {isLoading && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-          {recipe ? 'עדכן מתכון' : 'שמור מתכון'}
-        </Button>
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            ביטול
-          </Button>
-        )}
+          ביטול
+        </button>
+        <button 
+          type="submit" 
+          disabled={isLoading}
+          className={`${buttonBaseClass} flex items-center bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isLoading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : null}
+          שמור מתכון
+        </button>
       </div>
     </form>
   );
-}  
+}
