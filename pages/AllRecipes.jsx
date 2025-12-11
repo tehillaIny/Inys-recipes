@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getRecipes, getTags } from '@/firebaseService';
 import RecipeCard from '@/components/Recipes/RecipeCard';
 import SearchAndFilter from '@/components/Recipes/SearchAndFilter';
-import { Plus, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react"; // הסרתי את Plus כי מחקנו את הכפתור
 import CsvExportImport from '@/components/Recipes/CsvExportImport';
 
 export default function AllRecipes() {
@@ -80,19 +80,24 @@ export default function AllRecipes() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-40 border-b border-gray-100">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-14 h-14 relative flex-shrink-0">
+    <div className="min-h-screen bg-gray-50 pb-24 text-right" dir="rtl">
+      {/* Header - הוספתי רקע גרדיאנט עדין במקום לבן נקי */}
+      <header className="bg-gradient-to-b from-amber-100 via-amber-50 to-white sticky top-0 z-40 border-b border-amber-100 shadow-sm">
+        <div className="max-w-lg mx-auto px-4 py-6"> {/* הגדלתי קצת את ה-padding */}
+          <div className="flex items-center justify-start gap-4 mb-4">
+            
+            {/* הלוגו - הוגדל ל-w-20 h-20 */}
+            <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
               <img 
                 src="/logo.png" 
                 alt="Logo" 
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800 tracking-tight">המתכונים שלי</h1>
+            
+            <h1 className="text-3xl font-bold text-gray-800 tracking-tight drop-shadow-sm">
+              המתכונים שלי
+            </h1>
           </div>
 
           <SearchAndFilter 
@@ -110,9 +115,10 @@ export default function AllRecipes() {
       {/* Main Content */}
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
         
-        <CsvExportImport recipes={recipes} onImportComplete={fetchData} />
+        <div className="flex justify-start"> 
+           <CsvExportImport recipes={recipes} onImportComplete={fetchData} />
+        </div>
 
-        {/* השינוי כאן: grid-cols-2 במקום grid-cols-1 */}
         <div className="grid grid-cols-2 gap-4">
           {filteredRecipes.length > 0 ? (
             filteredRecipes.map(recipe => (
@@ -135,12 +141,7 @@ export default function AllRecipes() {
         </div>
       </main>
 
-      <Link 
-        href="/AddRecipe"
-        className="fixed bottom-24 left-6 w-14 h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-50"
-      >
-        <Plus className="w-8 h-8" />
-      </Link>
+      {/* הסרתי את הכפתור הצף מכאן */}
     </div>
   );
 }

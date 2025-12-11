@@ -5,11 +5,10 @@ import { format } from "date-fns";
 import { deleteRecipe } from "@/firebaseService";
 
 export default function RecipeCard({ recipe }) {
-  // שינוי: שימוש בתמונה המקומית מתיקיית public
-  const defaultImage = "/defualt_img.jpg"; 
+  const defaultImage = "/defualt_img.jpg";
 
   const handleDelete = async (e) => {
-    e.preventDefault(); // מניעת כניסה למתכון בעת מחיקה
+    e.preventDefault(); 
     if (confirm("האם את בטוחה שברצונך למחוק את המתכון?")) {
       await deleteRecipe(recipe.id);
       window.location.reload(); 
@@ -18,9 +17,9 @@ export default function RecipeCard({ recipe }) {
 
   return (
     <Link href={`/recipe/${recipe.id}`} className="block">
-      <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-0 shadow-md rounded-xl">
+      <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-0 shadow-md rounded-xl h-full flex flex-col">
         {/* IMAGE */}
-        <div className="relative h-48 overflow-hidden rounded-t-xl">
+        <div className="relative h-48 overflow-hidden rounded-t-xl shrink-0">
           <img
             src={recipe.imageUrl || defaultImage}
             alt={recipe.name}
@@ -28,7 +27,7 @@ export default function RecipeCard({ recipe }) {
             onError={(e) => (e.currentTarget.src = defaultImage)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-3 right-3 left-3">
+          <div className="absolute bottom-3 right-3 left-3 text-right"> {/* כותרת בימין */}
             <h3 className="text-white font-bold text-lg leading-tight line-clamp-2 drop-shadow-lg">
               {recipe.name}
             </h3>
@@ -36,14 +35,15 @@ export default function RecipeCard({ recipe }) {
         </div>
 
         {/* CONTENT */}
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-1 text-right"> {/* תוכן מיושר לימין */}
           {recipe.description && (
-            <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+            <p className="text-gray-600 text-sm line-clamp-2 mb-3 text-right">
               {recipe.description}
             </p>
           )}
 
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          {/* תגיות מיושרות לימין */}
+          <div className="flex flex-wrap gap-1.5 mb-3 justify-start">
             {recipe.tags?.slice(0, 3).map((tag, i) => (
               <span
                 key={i}
@@ -59,7 +59,7 @@ export default function RecipeCard({ recipe }) {
             )}
           </div>
 
-          <div className="flex items-center text-gray-400 text-xs">
+          <div className="mt-auto flex items-center text-gray-400 text-xs justify-start">
             <Clock className="w-3.5 h-3.5 ml-1" />
             <span>
               {recipe.created_date

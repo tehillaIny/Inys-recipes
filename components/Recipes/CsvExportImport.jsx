@@ -156,7 +156,7 @@ export default function CsvExportImport({ onImportSuccess }) {
 
   return (
     <>
-      <div className="flex gap-2 mb-4 justify-end">
+<div className="flex gap-2 mb-4 justify-start">
         <button
           onClick={() => setShowImportModal(true)}
           className="bg-white border border-gray-200 text-gray-600 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors shadow-sm text-xs font-medium"

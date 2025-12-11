@@ -99,7 +99,7 @@ export default function RecipeDetail() {
     );
   }
 
-  const defaultImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop";
+  const defaultImage = "/defualt_img.jpg";
 
   return (
     <div className="min-h-screen bg-white pb-24 text-right" dir="rtl">

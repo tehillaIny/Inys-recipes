@@ -36,8 +36,9 @@ export default function RecipeDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // שינוי: שימוש בתמונה המקומית
-  const defaultImage = "/defualt_img.png";
+  const localDefaultImage = "/defualt_img.jpg";
+  // הקישור הישן ששמור ב-DB וצריך להתעלם ממנו
+  const oldUnsplashImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
   useEffect(() => {
     if (!recipeId) return;
@@ -86,6 +87,16 @@ export default function RecipeDetail() {
     }
   };
 
+  // פונקציית עזר לבחירת התמונה הנכונה
+  const getDisplayImage = () => {
+    if (!recipe?.imageUrl) return localDefaultImage;
+    if (recipe.imageUrl === oldUnsplashImage) return localDefaultImage;
+    // בדיקה נוספת: לפעמים הקישור ב-DB מכיל פרמטרים שונים במקצת
+    if (recipe.imageUrl.includes("images.unsplash.com/photo-1546069901")) return localDefaultImage;
+    
+    return recipe.imageUrl;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -108,14 +119,14 @@ export default function RecipeDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-white pb-24 text-right" dir="rtl">
       {/* Hero Image */}
       <div className="relative h-72 sm:h-96">
         <img 
-          src={recipe.imageUrl || defaultImage}
+          src={getDisplayImage()}
           alt={recipe.name}
           className="w-full h-full object-cover"
-          onError={(e) => e.target.src = defaultImage}
+          onError={(e) => e.target.src = localDefaultImage}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
@@ -159,7 +170,7 @@ export default function RecipeDetail() {
 
         {/* Title */}
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg text-right">
             {recipe.name}
           </h1>
           <div className="flex items-center gap-4 text-white/80 text-sm">
@@ -186,7 +197,7 @@ export default function RecipeDetail() {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Tags */}
         {recipe.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-start">
             {recipe.tags.map((tag, i) => (
               <Badge 
                 key={i}
@@ -200,7 +211,7 @@ export default function RecipeDetail() {
 
         {/* Description */}
         {recipe.description && (
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className="text-gray-600 text-lg leading-relaxed text-right">
             {recipe.description}
           </p>
         )}
@@ -218,7 +229,7 @@ export default function RecipeDetail() {
               {recipe.ingredients.split('\n').filter(Boolean).map((line, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-700">{line}</span>
+                  <span className="text-gray-700 text-right">{line}</span>
                 </div>
               ))}
             </div>
@@ -228,14 +239,14 @@ export default function RecipeDetail() {
         {/* Method */}
         {recipe.method && (
           <section>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">אופן הכנה</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-4 text-right">אופן הכנה</h2>
             <div className="space-y-4">
               {recipe.method.split('\n').filter(Boolean).map((step, i) => (
                 <div key={i} className="flex gap-4">
                   <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                     {i + 1}
                   </div>
-                  <p className="text-gray-700 pt-1 leading-relaxed">{step}</p>
+                  <p className="text-gray-700 pt-1 leading-relaxed text-right">{step}</p>
                 </div>
               ))}
             </div>
@@ -249,7 +260,7 @@ export default function RecipeDetail() {
               <StickyNote className="w-5 h-5" />
               הערות אישיות
             </h2>
-            <p className="text-yellow-900/90 whitespace-pre-line leading-relaxed">
+            <p className="text-yellow-900/90 whitespace-pre-line leading-relaxed text-right">
               {recipe.notes}
             </p>
           </section>
@@ -261,12 +272,12 @@ export default function RecipeDetail() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>מחיקת מתכון</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-right">מחיקת מתכון</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
               האם אתה בטוח שברצונך למחוק את המתכון "{recipe.name}"? פעולה זו אינה ניתנת לביטול.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogFooter className="flex-row-reverse gap-2 sm:justify-start">
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}

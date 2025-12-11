@@ -27,21 +27,24 @@ export default function SearchAndFilter({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" dir="rtl">
       <div className="flex gap-2 relative">
         {/* חיפוש */}
         <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {/* אייקון חיפוש - בצד שמאל */}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          
           <input
             type="text"
             placeholder="חיפוש מתכונים..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10 pl-4 bg-white border border-gray-200 rounded focus:border-amber-400 focus:ring-amber-400 w-full"
+            // pl-10 נותן מקום לאייקון משמאל, pr-4 נותן ריפוד להתחלת כתיבה מימין
+            className="pl-10 pr-4 bg-white border border-gray-200 rounded focus:border-amber-400 focus:ring-amber-400 w-full text-right"
           />
         </div>
 
-        {/* כפתור סינון */}
+        {/* כפתורי סינון ומיון (יופיעו משמאל לחיפוש ב-RTL) */}
         <button
           onClick={() => setFilterOpen(!filterOpen)}
           className={`border border-gray-200 rounded p-2 ${
@@ -53,7 +56,6 @@ export default function SearchAndFilter({
           <SlidersHorizontal className="w-4 h-4" />
         </button>
 
-        {/* כפתור מיון */}
         <div className="relative">
           <button
             onClick={() => setSortOpen(!sortOpen)}
@@ -66,7 +68,7 @@ export default function SearchAndFilter({
           {sortOpen && (
             <div className="absolute left-0 mt-2 bg-white shadow-md border rounded w-36 z-20 text-right">
               <button
-                className="w-full px-3 py-2 hover:bg-gray-100"
+                className="w-full px-3 py-2 hover:bg-gray-100 text-right"
                 onClick={() => {
                   setSortOrder("newest");
                   setSortOpen(false);
@@ -75,7 +77,7 @@ export default function SearchAndFilter({
                 החדשים ביותר
               </button>
               <button
-                className="w-full px-3 py-2 hover:bg-gray-100"
+                className="w-full px-3 py-2 hover:bg-gray-100 text-right"
                 onClick={() => {
                   setSortOrder("oldest");
                   setSortOpen(false);
@@ -84,7 +86,7 @@ export default function SearchAndFilter({
                 הישנים ביותר
               </button>
               <button
-                className="w-full px-3 py-2 hover:bg-gray-100"
+                className="w-full px-3 py-2 hover:bg-gray-100 text-right"
                 onClick={() => {
                   setSortOrder("name");
                   setSortOpen(false);
@@ -97,10 +99,10 @@ export default function SearchAndFilter({
         </div>
       </div>
 
-      {/* חלון סינון (מופיע כקופסה רגילה במקום sheet) */}
+      {/* חלון סינון */}
       {filterOpen && (
-        <div className="border p-4 rounded bg-white shadow-sm">
-          <div className="flex flex-wrap gap-2">
+        <div className="border p-4 rounded bg-white shadow-sm text-right">
+          <div className="flex flex-wrap gap-2 justify-start">
             {allTags.map((tag) => (
               <span
                 key={tag.id}
@@ -118,7 +120,7 @@ export default function SearchAndFilter({
 
           {selectedTags.length > 0 && (
             <button
-              className="mt-4 text-gray-500 flex items-center gap-1 text-sm"
+              className="mt-4 text-gray-500 flex items-center gap-1 text-sm mr-auto" // mr-auto דוחף לשמאל
               onClick={clearFilters}
             >
               <X className="w-4 h-4" />
@@ -128,17 +130,17 @@ export default function SearchAndFilter({
         </div>
       )}
 
-      {/* תגיות שנבחרו */}
+      {/* תגיות שנבחרו - מיושרות לימין */}
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 justify-start">
           {selectedTags.map((tag) => (
             <span
               key={tag}
               className="bg-amber-100 text-amber-800 hover:bg-amber-200 rounded px-2 py-1 text-sm flex items-center gap-1 cursor-pointer"
               onClick={() => toggleTag(tag)}
             >
-              {tag}
               <X className="w-3 h-3" />
+              {tag}
             </span>
           ))}
         </div>
