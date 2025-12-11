@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
 
 const CLOUDINARY_CLOUD_NAME = "dysrx5oeu";
@@ -164,5 +164,27 @@ export async function syncMissingTags() {
   } catch (err) {
     console.error("שגיאה בסנכרון תגיות:", err);
     alert("אירעה שגיאה בסנכרון.");
+  }
+}
+
+export async function updateRecipe(id: string, data: any) {
+  try {
+    const recipeRef = doc(db, "recipes", id);
+    await updateDoc(recipeRef, data);
+    console.log("מתכון עודכן בהצלחה:", id);
+  } catch (err) {
+    console.error("שגיאה בעדכון מתכון:", err);
+    throw err;
+  }
+}
+
+export async function deleteTag(tagId: string) {
+  try {
+    const tagRef = doc(db, "tags", tagId);
+    await deleteDoc(tagRef);
+    console.log("תגית נמחקה בהצלחה:", tagId);
+  } catch (err) {
+    console.error("שגיאה במחיקת תגית:", err);
+    throw err;
   }
 }
