@@ -13,7 +13,8 @@ import {
   ExternalLink,
   Loader2,
   Share2,
-  BookOpen
+  BookOpen,
+  X
 } from "lucide-react";
 
 export default function RecipeDetail() {
@@ -23,6 +24,9 @@ export default function RecipeDetail() {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+
+  // מצב לפתיחת התמונה
+  const [isImageOpen, setIsImageOpen] = useState(false);
 
   useEffect(() => {
     if (!recipeId) return;
@@ -51,7 +55,7 @@ export default function RecipeDetail() {
   const handleDelete = async () => {
     if (!recipeId) return;
 
-    const confirmed = window.confirm(`האם אתה בטוח שברצונך למחוק את המתכון "${recipe.name}"? פעולה זו אינה ניתנת לביטול.`);
+    const confirmed = window.confirm(`האם אתה בטוח שברצונך למחוק את המתכון "${recipe.name}"?`);
     if (!confirmed) return;
 
     setDeleting(true);
@@ -103,24 +107,33 @@ export default function RecipeDetail() {
 
   return (
     <div className="min-h-screen bg-white pb-24 text-right" dir="rtl">
-      {/* Hero Image */}
-      <div className="relative h-72 sm:h-96">
-        <img 
+
+      {/* --- HERO IMAGE --- */}
+      <div
+        className="relative h-72 sm:h-96 overflow-hidden cursor-zoom-in"
+        onClick={() => setIsImageOpen(true)}
+      >
+        <img
           src={recipe.imageUrl || defaultImage}
           alt={recipe.name}
           className="w-full h-full object-cover"
           onError={(e) => e.target.src = defaultImage}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
         {/* Header Actions */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
+        <div
+          className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             className="bg-white/90 backdrop-blur-sm hover:bg-white p-2 rounded"
             onClick={() => router.back()}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
+
           <div className="flex gap-2">
             <button
               className="bg-white/90 backdrop-blur-sm hover:bg-white p-2 rounded"
@@ -128,12 +141,14 @@ export default function RecipeDetail() {
             >
               <Share2 className="w-4 h-4" />
             </button>
+
             <button
               className="bg-white/90 backdrop-blur-sm hover:bg-white p-2 rounded"
               onClick={() => router.push(`/EditRecipe?id=${recipeId}`)}
             >
               <Pencil className="w-4 h-4" />
             </button>
+
             <button
               className="bg-white/90 backdrop-blur-sm hover:bg-white p-2 rounded text-red-500 hover:text-red-600 flex items-center"
               onClick={handleDelete}
@@ -146,17 +161,19 @@ export default function RecipeDetail() {
         </div>
 
         {/* Title */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-right">
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-right pointer-events-none">
           <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
             {recipe.name}
           </h1>
+
           <div className="flex items-center gap-4 text-white/80 text-sm justify-end">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               {recipe.created_date ? format(new Date(recipe.created_date), 'dd/MM/yyyy') : '-'}
             </span>
+
             {recipe.sourceUrl && (
-              <a 
+              <a
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -170,13 +187,38 @@ export default function RecipeDetail() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* --- FULLSCREEN MODAL IMAGE --- */}
+      {isImageOpen && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[9999]"
+          onClick={() => setIsImageOpen(false)}
+        >
+          <img
+            src={recipe.imageUrl || defaultImage}
+            alt="Large"
+            className="max-w-[95%] max-h-[95%] object-contain rounded-xl shadow-2xl"
+          />
+
+          <button
+            className="absolute top-5 right-5 text-white bg-black/50 p-2 rounded-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsImageOpen(false);
+            }}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+
+      {/* --- MAIN CONTENT --- */}
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6 text-right">
+
         {/* Tags */}
         {recipe.tags?.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-end">
             {recipe.tags.map((tag, i) => (
-              <Badge 
+              <Badge
                 key={i}
                 className="bg-amber-100 text-amber-800 hover:bg-amber-200"
               >
@@ -196,8 +238,8 @@ export default function RecipeDetail() {
         {/* Ingredients */}
         {recipe.ingredients && (
           <section className="bg-amber-50 rounded-2xl p-5" dir="rtl">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse items-center gap-2 justify-end text-right">
-              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center flex-shrink-0">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse items-center gap-2 justify-end">
+              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-amber-700" />
               </div>
               מרכיבים
@@ -205,15 +247,11 @@ export default function RecipeDetail() {
 
             <div className="space-y-2">
               {recipe.ingredients.split('\n').filter(Boolean).map((line, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3"
-                  style={{ direction: "rtl" }}
-                >
-                  {/* נקודה מימין */}
-                  <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0" style={{ order: 0 }} />
-                  {/* טקסט */}
-                  <span className="text-gray-700 text-right w-full" style={{ order: 1 }}>
+                <div key={i} className="flex items-start gap-3" style={{ direction: "rtl" }}>
+
+                  <div className="w-2 h-2 bg-amber-500 rounded-full mt-2" />
+
+                  <span className="text-gray-700 text-right w-full">
                     {line}
                   </span>
                 </div>
@@ -224,29 +262,20 @@ export default function RecipeDetail() {
 
         {/* Method */}
         {recipe.method && (
-          <section className="text-right" dir="rtl">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse justify-end text-right">
+          <section dir="rtl">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex flex-row-reverse justify-end">
               אופן הכנה
             </h2>
 
             <div className="space-y-4">
               {recipe.method.split('\n').filter(Boolean).map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-4"
-                  style={{ direction: "rtl" }}
-                >
-                  {/* מספר מימין */}
-                  <div
-                    className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500
-                              rounded-full flex items-center justify-center
-                              text-white font-bold text-sm flex-shrink-0"
-                    style={{ order: 0 }}
-                  >
+                <div key={i} className="flex items-start gap-4" style={{ direction: "rtl" }}>
+
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
                     {i + 1}
                   </div>
-                  {/* טקסט */}
-                  <p className="text-gray-700 leading-relaxed text-right w-full" style={{ order: 1 }}>
+
+                  <p className="text-gray-700 leading-relaxed text-right w-full">
                     {step}
                   </p>
                 </div>
