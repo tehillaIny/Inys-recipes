@@ -49,7 +49,7 @@ useEffect(() => {
 
     await addRecipe(formData);
     setSaving(false);
-    router.push("/all-recipes");
+    router.push("/AllRecipes");
   };
 
   const handleImport = (data: Recipe) => {

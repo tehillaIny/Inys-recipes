@@ -18,9 +18,9 @@ export default function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-50">
         <div className="flex items-center justify-around h-16 max-w-lg mx-auto relative">
           <button
-            onClick={() => navigate("/all-recipes")}
+            onClick={() => navigate("/AllRecipes")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('/all-recipes') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/AllRecipes') ? 'text-amber-600' : 'text-gray-500'
             }`}
           >
             <BookOpen className="w-5 h-5" />
@@ -37,9 +37,9 @@ export default function BottomNav() {
           </div>
 
           <button
-            onClick={() => navigate("/categories")}
+            onClick={() => navigate("/Categories")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('/categories') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/Categories') ? 'text-amber-600' : 'text-gray-500'
             }`}
           >
             <Grid3X3 className="w-5 h-5" />
