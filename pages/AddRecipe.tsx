@@ -22,13 +22,19 @@ type Recipe = {
 
 export default function AddRecipePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"manual" | "import">("manual");
   const [importedData, setImportedData] = useState<Recipe | null>(null);
   const [saving, setSaving] = useState(false);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mode, setMode] = useState<"manual" | "import">("manual");
 
 useEffect(() => {
+    if (router.isReady && router.query.mode === 'import') {
+      setMode('import');
+    }
+  }, [router.isReady, router.query]);
+
+  useEffect(() => {
   const fetchTags = async () => {
     const tagsFromServer = await getTags(); 
     setAllTags(tagsFromServer);  
