@@ -1,11 +1,8 @@
-import React from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { getTags, getRecipes } from "@/firebaseService";
 import { Loader2, Tag, ChevronLeft, Grid3X3, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 
 const tagColors = [
   'from-rose-400 to-pink-500',
@@ -19,27 +16,39 @@ const tagColors = [
 ];
 
 export default function Categories() {
-  const { data: tags = [], isLoading: tagsLoading } = useQuery({
-    queryKey: ['tags'],
-    queryFn: () => base44.entities.Tag.list(),
-  });
+  const [tags, setTags] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: recipes = [], isLoading: recipesLoading } = useQuery({
-    queryKey: ['recipes'],
-    queryFn: () => base44.entities.Recipe.list(),
-  });
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tagsData, recipesData] = await Promise.all([
+          getTags(),
+          getRecipes()
+        ]);
+        setTags(tagsData);
+        setRecipes(recipesData);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const isLoading = tagsLoading || recipesLoading;
+    fetchData();
+  }, []);
 
   const getRecipeCount = (tagName) => {
-    return recipes.filter(r => r.tags?.includes(tagName)).length;
+    if (!recipes) return 0;
+    return recipes.filter(r => r.tags && r.tags.includes(tagName)).length;
   };
 
   const getTagColor = (index) => {
     return tagColors[index % tagColors.length];
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
@@ -83,11 +92,16 @@ export default function Categories() {
               return (
                 <Link
                   key={tag.id}
-                  to={createPageUrl("AllRecipes") + `?tag=${encodeURIComponent(tag.name)}`}
+                  href={`/AllRecipes?tag=${encodeURIComponent(tag.name)}`}
+                  className="block"
                 >
-                  <Card className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0">
+                  {/* החלפתי את ה-Card ב-div עם עיצוב דומה */}
+                  <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-100 rounded-xl bg-white shadow-sm">
+                    {/* פס צבע עליון */}
                     <div className={`h-2 bg-gradient-to-r ${getTagColor(index)}`} />
-                    <CardContent className="p-4">
+                    
+                    {/* תוכן הכרטיס */}
+                    <div className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-800 mb-1">{tag.name}</h3>
@@ -97,8 +111,8 @@ export default function Categories() {
                         </div>
                         <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-amber-500 transition-colors" />
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </Link>
               );
             })}
@@ -120,7 +134,7 @@ export default function Categories() {
                 .map((tag, index) => (
                   <Link
                     key={tag.id}
-                    to={createPageUrl("AllRecipes") + `?tag=${encodeURIComponent(tag.name)}`}
+                    href={`/AllRecipes?tag=${encodeURIComponent(tag.name)}`}
                   >
                     <Badge
                       className={`bg-gradient-to-r ${getTagColor(index)} text-white border-0 px-3 py-1.5 text-sm hover:opacity-90 transition-opacity cursor-pointer`}
