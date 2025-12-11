@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getTags, getRecipes } from "@/firebaseService";
+import { getTags, getRecipes} from "@/firebaseService";
 import { Loader2, Tag, ChevronLeft, Grid3X3, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 

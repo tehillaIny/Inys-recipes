@@ -130,3 +130,39 @@ export async function uploadImage(file: File): Promise<string> {
     throw err;
   }
 }
+
+// פונקציית סנכרון תגיות - עוברת על כל המתכונים ומוודאה שהתגיות שלהם קיימות ברשימה הראשית
+export async function syncMissingTags() {
+  console.log("מתחיל סנכרון תגיות...");
+  try {
+    // 1. שליפת כל המתכונים
+    const recipesRef = collection(db, "recipes");
+    const recipesSnapshot = await getDocs(recipesRef);
+    
+    // 2. איסוף כל שמות התגיות מכל המתכונים
+    const allTagsSet = new Set<string>();
+    recipesSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.tags && Array.isArray(data.tags)) {
+        data.tags.forEach((t: string) => {
+          if (t && t.trim()) allTagsSet.add(t.trim());
+        });
+      }
+    });
+
+    console.log(`נמצאו ${allTagsSet.size} תגיות ייחודיות במתכונים.`);
+
+    // 3. הוספה של כל תגית (הפונקציה addTag שלנו כבר בודקת כפילויות, אז זה בטוח)
+    let addedCount = 0;
+    for (const tagName of Array.from(allTagsSet)) {
+      await addTag(tagName); // הפונקציה הקיימת שלך שבודקת לפני הוספה
+      addedCount++;
+    }
+
+    console.log("סנכרון הסתיים בהצלחה!");
+    alert("סנכרון הושלם! כל הקטגוריות החסרות נוספו.");
+  } catch (err) {
+    console.error("שגיאה בסנכרון תגיות:", err);
+    alert("אירעה שגיאה בסנכרון.");
+  }
+}

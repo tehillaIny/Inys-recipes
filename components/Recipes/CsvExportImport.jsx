@@ -1,252 +1,181 @@
 import React, { useState, useRef } from 'react';
-import Papa from 'papaparse';
-import { addRecipe, uploadImage, getRecipes } from "@/firebaseService"; 
-import { Download, Upload, Loader2, Image as ImageIcon, FileText, X, Check } from "lucide-react";
+import { Download, Upload, Loader2, CheckCircle } from "lucide-react";
+import { addRecipe, addTag } from "@/firebaseService"; // הוספנו את addTag
+import Papa from "papaparse";
 
-export default function CsvExportImport({ onImportSuccess }) {
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [progress, setProgress] = useState("");
-  
-  const [selectedCsv, setSelectedCsv] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([]);
-  
-  const csvInputRef = useRef(null);
-  const imagesInputRef = useRef(null);
+export default function CsvExportImport({ recipes, onImportComplete = () => {} }) {
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [importResult, setImportResult] = useState({ success: 0, failed: 0 });
+  const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
-  // --- לוגיקת ייצוא (Export) ---
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      const recipes = await getRecipes();
-      
-      const csvData = recipes.map(r => ({
-        name: r.name,
-        description: r.description,
-        tags: Array.isArray(r.tags) ? r.tags.join(';') : r.tags,
-        Ingredients: r.ingredients,
-        instructions: r.method,
-        pic_link: r.imageUrl,
-        source_link: r.sourceUrl
-      }));
+  // ---------------------- EXPORT CSV ----------------------
+  const exportToCsv = async () => {
+    if (!recipes || recipes.length === 0) return;
 
-      const csvString = Papa.unparse(csvData);
-      
-      // --- התיקון: הוספת BOM (\uFEFF) לתמיכה בעברית ---
-      const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
-      
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `recipes_backup_${new Date().toLocaleDateString("he-IL").replace(/\./g, "-")}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert("שגיאה בייצוא המתכונים");
-    } finally {
-      setIsExporting(false);
-    }
+    setExporting(true);
+    const headers = ['name','description','tags','Ingredients','instructions','pic_link','source_link'];
+
+    const rows = recipes.map(r => [
+      r.name || '',
+      r.description || '',
+      (r.tags || []).join(';'), // שיניתי למפריד נקודה-פסיק רגיל ללא רווח לנוחות
+      (r.ingredients || '').replace(/\n/g, ' | '),
+      (r.method || '').replace(/\n/g, ' | '),
+      r.imageUrl || '',
+      r.sourceUrl || ''
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `מתכונים_${new Date().toLocaleDateString('he-IL').replace(/\./g, '-')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    setExporting(false);
   };
 
-  // --- לוגיקת בחירת קבצים ---
-  const handleCsvSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedCsv(e.target.files[0]);
-    }
-  };
+  // ---------------------- IMPORT CSV ----------------------
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const handleImagesSelect = (e) => {
-    if (e.target.files) {
-      setSelectedImages(Array.from(e.target.files));
-    }
-  };
+    console.log("📁 handleFileSelect — קובץ נבחר", file);
+    setImporting(true);
+    setProgress(0);
 
-  const closeModals = () => {
-    setShowImportModal(false);
-    setSelectedCsv(null);
-    setSelectedImages([]);
-    setProgress("");
-  };
-
-  // --- לוגיקת הייבוא החכמה (Import) ---
-  const handleStartImport = () => {
-    if (!selectedCsv) return;
-
-    setIsImporting(true);
-    setProgress("קורא את קובץ הנתונים...");
-
-    Papa.parse(selectedCsv, {
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      encoding: "UTF-8", // וידוא קריאה נכונה גם בייבוא
       complete: async (results) => {
-        const recipes = results.data;
-        let successCount = 0;
-        let errorsCount = 0;
+        const data = results.data;
+        console.log(`📄 זוהו ${data.length} שורות ב-CSV`);
 
-        for (let i = 0; i < recipes.length; i++) {
-          const row = recipes[i];
-          // דילוג על שורות ריקות לחלוטין אם יש
-          if (!row.name && !row.Ingredients) continue;
+        let success = 0;
+        let failed = 0;
 
-          setProgress(`מעבד מתכון ${i + 1} מתוך ${recipes.length}: ${row.name || 'ללא שם'}`);
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i];
+          
+          // חילוץ התגיות למערך
+          const tagsList = (row.tags || '').split(/[;,]/).map(t => t.trim()).filter(Boolean);
+
+          const recipe = {
+            name: row.name || '',
+            description: row.description || '',
+            tags: tagsList,
+            ingredients: (row.Ingredients || '').replace(/ \| /g, '\n'),
+            method: (row.instructions || '').replace(/ \| /g, '\n'),
+            imageUrl: row.pic_link || '',
+            sourceUrl: row.source_link || '',
+            created_date: new Date().toISOString(),
+          };
 
           try {
-            let finalImageUrl = '';
-
-            // 1. שידוך תמונה
-            if (row.pic_link && row.pic_link.trim() !== '') {
-              const originalPath = row.pic_link;
-              const filename = originalPath.split(/[/\\]/).pop();
-
-              const matchingFile = selectedImages.find(file => file.name === filename);
-
-              if (matchingFile) {
-                finalImageUrl = await uploadImage(matchingFile);
-              } else if (row.pic_link.startsWith('http')) {
-                 finalImageUrl = row.pic_link;
+            // 1. שמירת המתכון
+            await addRecipe(recipe);
+            
+            // 2. תיקון: שמירת התגיות ברשימה הכללית (אם לא קיימות)
+            if (tagsList.length > 0) {
+              for (const tagName of tagsList) {
+                await addTag(tagName); 
               }
             }
 
-            // 2. עיבוד תגיות
-            const tags = row.tags ? row.tags.split(';').map(t => t.trim()).filter(Boolean) : [];
-
-            // 3. שמירה
-            const recipeData = {
-              name: row.name || 'מתכון ללא שם',
-              description: row.description || '',
-              ingredients: row.Ingredients || '',
-              method: row.instructions || '',
-              imageUrl: finalImageUrl,
-              sourceUrl: row.source_link || '',
-              tags: tags,
-              createdAt: new Date()
-            };
-
-            await addRecipe(recipeData);
-            successCount++;
-
-          } catch (error) {
-            console.error(`Error importing recipe ${row.name}:`, error);
-            errorsCount++;
+            success++;
+            console.log("✔ מתכון נשמר:", recipe.name);
+          } catch (err) {
+            failed++;
+            console.error("❌ שגיאה בשמירת מתכון:", recipe, err);
+          } finally {
+            setProgress(i + 1);
           }
         }
 
-        setIsImporting(false);
-        alert(`הייבוא הסתיים!\n✅ ${successCount} מתכונים נוספו בהצלחה`);
-        closeModals();
-        if (onImportSuccess) onImportSuccess();
+        console.log(`🏁 הייבוא הסתיים. הצלחות: ${success}, כשלונות: ${failed}`);
+        setImportResult({ success, failed });
+        setShowResult(true);
+        setImporting(false);
+        setProgress(0);
+
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (typeof onImportComplete === "function") onImportComplete();
       },
-      error: (error) => {
-        console.error("CSV Parse Error:", error);
-        setIsImporting(false);
-        alert("שגיאה בקריאת הקובץ");
+      error: (err) => {
+        console.error("❌ שגיאה בקריאת CSV:", err);
+        setImporting(false);
       }
     });
   };
 
+  // ---------------------- UI ----------------------
   return (
     <>
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2">
         <button
-          onClick={() => setShowImportModal(true)}
-          className="flex-1 bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm font-medium"
+          onClick={exportToCsv}
+          disabled={exporting || !recipes || recipes.length === 0}
+          className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Upload className="w-4 h-4 text-amber-600" />
-          ייבוא מקובץ
+          {exporting ? <Loader2 className="w-3 h-3 ml-1 animate-spin" /> : <Download className="w-3 h-3 ml-1" />}
+          ייצוא CSV
         </button>
 
         <button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="flex-1 bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm font-medium"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importing}
+          className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isExporting ? (
-            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-          ) : (
-            <Download className="w-4 h-4 text-green-600" />
-          )}
-          ייצוא ל-CSV
+          {importing ? <Loader2 className="w-3 h-3 ml-1 animate-spin" /> : <Upload className="w-3 h-3 ml-1" />}
+          ייבוא CSV
         </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
       </div>
 
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800">ייבוא מתכונים משולב</h3>
-              <button onClick={closeModals} className="p-1 hover:bg-white rounded-full transition-colors text-gray-500">
-                <X className="w-5 h-5" />
-              </button>
+      {importing && (
+        <div className="text-xs mt-2 text-gray-600">
+          טוען CSV... {progress}/{recipes?.length || "?"} שורות
+        </div>
+      )}
+
+      {showResult && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center shadow-lg">
+            <div className="flex items-center justify-center gap-2 text-xl font-semibold">
+              <CheckCircle className="w-6 h-6 text-green-500" />
+              הייבוא הושלם
             </div>
-
-            <div className="p-5 space-y-5">
-              <p className="text-sm text-gray-500 mb-2">
-                כדי לייבא מתכונים עם תמונות, בחרי את קובץ ה-CSV ואת תיקיית התמונות. המערכת תחבר ביניהם אוטומטית.
-              </p>
-
-              <div className={`p-3 rounded-xl border-2 transition-colors ${selectedCsv ? 'border-green-100 bg-green-50' : 'border-gray-100 bg-gray-50'}`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-green-600">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <label className="text-sm font-bold text-gray-700">1. קובץ נתונים (CSV)</label>
-                </div>
-                <input
-                  type="file"
-                  accept=".csv"
-                  ref={csvInputRef}
-                  onChange={handleCsvSelect}
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-white file:text-green-700 hover:file:bg-green-50"
-                />
-              </div>
-
-              <div className={`p-3 rounded-xl border-2 transition-colors ${selectedImages.length > 0 ? 'border-blue-100 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-blue-600">
-                    <ImageIcon className="w-4 h-4" />
-                  </div>
-                  <label className="text-sm font-bold text-gray-700">2. תמונות (סמני את כולן)</label>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  ref={imagesInputRef}
-                  onChange={handleImagesSelect}
-                  className="block w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-white file:text-blue-700 hover:file:bg-blue-50"
-                />
-                {selectedImages.length > 0 && (
-                  <p className="text-xs text-blue-600 mt-2 font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" /> נבחרו {selectedImages.length} קבצים
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={handleStartImport}
-                disabled={isImporting || !selectedCsv}
-                className="w-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-95"
-              >
-                {isImporting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                    {progress || "מעבד נתונים..."}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5 ml-2" />
-                    התחל ייבוא
-                  </>
-                )}
-              </button>
+            <div className="text-lg mt-4">
+              יובאו {importResult.success} מתכונים בהצלחה
             </div>
+            {importResult.failed > 0 && (
+              <div className="text-sm text-red-600 mt-2">
+                {importResult.failed} שורות נכשלו
+              </div>
+            )}
+            <button
+              onClick={() => setShowResult(false)}
+              className="mt-6 border border-gray-300 rounded px-4 py-2 hover:bg-gray-100"
+            >
+              סגור
+            </button>
           </div>
         </div>
       )}
