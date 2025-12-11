@@ -13,7 +13,8 @@ import {
   ExternalLink,
   Loader2,
   Share2,
-  BookOpen
+  BookOpen,
+  StickyNote // הוספתי אייקון להערות
 } from "lucide-react";
 import {
   AlertDialog,
@@ -239,6 +240,20 @@ export default function RecipeDetail() {
             </div>
           </section>
         )}
+
+        {/* --- Notes Section (NEW) --- */}
+        {recipe.notes && (
+          <section className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mt-6">
+            <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
+              <StickyNote className="w-5 h-5" />
+              הערות אישיות
+            </h2>
+            <p className="text-yellow-900/90 whitespace-pre-line leading-relaxed">
+              {recipe.notes}
+            </p>
+          </section>
+        )}
+
       </div>
 
       {/* Delete Dialog */}

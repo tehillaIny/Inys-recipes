@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTags, addTag, uploadImage } from "@/firebaseService"; // הוספנו את uploadImage
+import { getTags, addTag, uploadImage } from "@/firebaseService"; 
 import { Plus, Loader2, Image as ImageIcon, UploadCloud, Link as LinkIcon, X } from "lucide-react";
 
 export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
@@ -9,12 +9,12 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     tags: [],
     ingredients: '',
     method: '',
+    notes: '', // הוספנו את שדה ההערות
     imageUrl: '',
     sourceUrl: ''
   });
   
-  // מצבים חדשים לניהול התמונה
-  const [imageMode, setImageMode] = useState('url'); // 'url' | 'upload'
+  const [imageMode, setImageMode] = useState('url'); 
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -22,7 +22,6 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
   const [allTags, setAllTags] = useState([]);
   const [newTag, setNewTag] = useState('');
 
-  // טעינת נתונים בעריכה
   useEffect(() => {
     if (recipe) {
       setFormData({
@@ -31,10 +30,10 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         tags: recipe.tags || [],
         ingredients: recipe.ingredients || '',
         method: recipe.method || '',
+        notes: recipe.notes || '', // טעינת הערות קיימות
         imageUrl: recipe.imageUrl || '',
         sourceUrl: recipe.sourceUrl || ''
       });
-      // אם יש תמונה קיימת, נציג אותה
       if (recipe.imageUrl) {
         setImageMode('url'); 
       }
@@ -45,12 +44,11 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     loadTags();
   }, []);
 
-  // יצירת תצוגה מקדימה כשבוחרים קובץ
   useEffect(() => {
     if (imageFile) {
       const url = URL.createObjectURL(imageFile);
       setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url); // ניקוי זיכרון
+      return () => URL.revokeObjectURL(url); 
     }
   }, [imageFile]);
 
@@ -106,25 +104,21 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     let finalImageUrl = formData.imageUrl;
 
     try {
-      // אם המשתמש בחר להעלות קובץ ויש קובץ
       if (imageMode === 'upload' && imageFile) {
         finalImageUrl = await uploadImage(imageFile);
-      } 
-      // אם המשתמש ניקה את השדה במצב קישור
-      else if (imageMode === 'url' && !formData.imageUrl) {
+      } else if (imageMode === 'url' && !formData.imageUrl) {
           finalImageUrl = '';
       }
 
       onSave({ ...formData, imageUrl: finalImageUrl });
     } catch (error) {
       console.error("Failed to save recipe:", error);
-      alert("שגיאה בשמירת המתכון (אולי הבעיה בהעלאת התמונה?)");
+      alert("שגיאה בשמירת המתכון");
     } finally {
       setIsUploading(false);
     }
   };
 
-  // מחלקות עיצוב משותפות
   const inputClass = "w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
   const buttonBaseClass = "px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
@@ -158,11 +152,9 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         />
       </div>
 
-      {/* תמונה - אזור משודרג */}
+      {/* תמונה */}
       <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
         <label className={labelClass}>תמונה</label>
-        
-        {/* טאבים לבחירה */}
         <div className="flex gap-2 mb-3 bg-white p-1 rounded-lg border border-gray-200 w-fit">
           <button
             type="button"
@@ -186,7 +178,6 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
           </button>
         </div>
 
-        {/* תוכן בהתאם לבחירה */}
         {imageMode === 'url' ? (
           <div className="relative">
              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -293,6 +284,18 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
           className={`${inputClass} h-32`}
         />
       </div>
+
+      {/* --- שדה הערות החדש --- */}
+      <div>
+        <label htmlFor="notes" className={labelClass}>הערות אישיות</label>
+        <textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => handleChange('notes', e.target.value)}
+          placeholder="טיפים, שינויים שעשיתי, למי זה מתאים..."
+          className={`${inputClass} h-24 bg-yellow-50/50 border-yellow-200 focus:ring-yellow-400`}
+        />
+      </div>
       
       {/* קישור למקור */}
       <div>
@@ -308,7 +311,6 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         />
       </div>
 
-      {/* כפתורים - ביטול ושמירה */}
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
         <button 
           type="button" 
