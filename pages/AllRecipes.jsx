@@ -95,14 +95,14 @@ export default function AllRecipes() {
         <div className="max-w-lg mx-auto px-4 py-6">
           <div className="flex items-center justify-start gap-4 mb-4">
             
-            {/* הלוגו */}
+            {/* הלוגו 
             <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
               <img 
                 src="/logo.png" 
                 alt="Logo" 
                 className="w-full h-full object-contain"
               />
-            </div>
+            </div>*/}
             
             <h1 className="text-3xl font-bold text-gray-800 tracking-tight drop-shadow-sm">
               המתכונים שלי

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
-import { Badge } from "@/components/ui/Badge"; // הנחתי שזה קיים, אם לא - תגידי לי
+import { Badge } from "@/components/ui/Badge"; 
 import {
   ChevronRight,
   Pencil,
@@ -24,9 +24,7 @@ export default function RecipeDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
-  // תמונת ברירת מחדל מקומית
-  const defaultImage = "/defualt_img.png";
-  // זיהוי הקישור הישן מ-Unsplash
+  const defaultImage = "/defualt_img.png"; // שים לב לשינוי לשם הקובץ הנכון אם צריך (jpg/png)
   const oldUnsplashImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
   useEffect(() => {
@@ -53,7 +51,6 @@ export default function RecipeDetail() {
     fetchRecipe();
   }, [recipeId]);
 
-  // פונקציית מחיקה פשוטה עם אישור דפדפן
   const handleDelete = async () => {
     if (!recipeId) return;
     
@@ -82,13 +79,11 @@ export default function RecipeDetail() {
         console.log('Error sharing:', error);
       }
     } else {
-      // גיבוי למקרה שהדפדפן לא תומך בשיתוף
       navigator.clipboard.writeText(window.location.href);
       alert('הקישור הועתק ללוח!');
     }
   };
 
-  // פונקציית עזר לבחירת התמונה הנכונה
   const getDisplayImage = () => {
     if (!recipe?.imageUrl) return defaultImage;
     if (recipe.imageUrl === oldUnsplashImage) return defaultImage;
@@ -120,7 +115,6 @@ export default function RecipeDetail() {
     );
   }
 
-  // סגנונות לכפתורי האייקונים
   const iconButtonClass = "p-2.5 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all active:scale-95 flex items-center justify-center";
 
   return (
@@ -137,8 +131,6 @@ export default function RecipeDetail() {
 
         {/* Header Actions */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-10">
-          
-          {/* כפתור חזרה */}
           <button
             onClick={() => router.back()}
             className={`${iconButtonClass} text-gray-700`}
@@ -148,7 +140,6 @@ export default function RecipeDetail() {
           </button>
 
           <div className="flex gap-3">
-            {/* כפתור שיתוף */}
             <button
               onClick={handleShare}
               className={`${iconButtonClass} text-gray-700`}
@@ -156,8 +147,6 @@ export default function RecipeDetail() {
             >
               <Share2 className="w-5 h-5" />
             </button>
-
-            {/* כפתור עריכה */}
             <button
               onClick={() => router.push(`/EditRecipe?id=${recipeId}`)}
               className={`${iconButtonClass} text-blue-600 hover:text-blue-700 hover:bg-blue-50`}
@@ -165,8 +154,6 @@ export default function RecipeDetail() {
             >
               <Pencil className="w-5 h-5" />
             </button>
-
-            {/* כפתור מחיקה */}
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -208,7 +195,7 @@ export default function RecipeDetail() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Main Content */}
       <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
         
         {/* Tags */}
@@ -231,6 +218,17 @@ export default function RecipeDetail() {
             {recipe.description}
           </div>
         )}
+
+        {/* ---- הוספת פרטי יצירה (תאריך ויוצר) ---- */}
+        <div className="text-gray-500 text-sm border-b border-gray-100 pb-4">
+          <p>
+            נוסף בתאריך: {recipe.created_date ? new Date(recipe.created_date).toLocaleDateString('he-IL') : '-'}
+          </p>
+          {recipe.createdBy && (
+            <p>הועלה על ידי: <strong>{recipe.createdBy}</strong></p>
+          )}
+        </div>
+        {/* -------------------------------------- */}
 
         {/* Ingredients */}
         {recipe.ingredients && (

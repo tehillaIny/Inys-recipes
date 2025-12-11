@@ -27,7 +27,7 @@ export default function RecipeCard({ recipe }) {
             onError={(e) => (e.currentTarget.src = defaultImage)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-3 right-3 left-3 text-right"> {/* כותרת בימין */}
+          <div className="absolute bottom-3 right-3 left-3 text-right">
             <h3 className="text-white font-bold text-lg leading-tight line-clamp-2 drop-shadow-lg">
               {recipe.name}
             </h3>
@@ -35,14 +35,14 @@ export default function RecipeCard({ recipe }) {
         </div>
 
         {/* CONTENT */}
-        <div className="p-4 flex flex-col flex-1 text-right"> {/* תוכן מיושר לימין */}
+        <div className="p-4 flex flex-col flex-1 text-right">
           {recipe.description && (
             <p className="text-gray-600 text-sm line-clamp-2 mb-3 text-right">
               {recipe.description}
             </p>
           )}
 
-          {/* תגיות מיושרות לימין */}
+          {/* תגיות */}
           <div className="flex flex-wrap gap-1.5 mb-3 justify-start">
             {recipe.tags?.slice(0, 3).map((tag, i) => (
               <span
@@ -59,13 +59,18 @@ export default function RecipeCard({ recipe }) {
             )}
           </div>
 
-          <div className="mt-auto flex items-center text-gray-400 text-xs justify-start">
-            <Clock className="w-3.5 h-3.5 ml-1" />
+          {/* תחתית הכרטיס - תאריך ויוצר */}
+          <div className="mt-auto pt-3 border-t border-gray-50 text-xs text-gray-400 flex justify-between items-center">
             <span>
-              {recipe.created_date
-                ? format(new Date(recipe.created_date), "dd/MM/yyyy")
-                : ""}
+              {recipe.created_date 
+                ? new Date(recipe.created_date).toLocaleDateString('he-IL') 
+                : ''}
             </span>
+            {recipe.createdBy && (
+              <span className="font-medium text-gray-500">
+                מאת: {recipe.createdBy}
+              </span>
+            )}
           </div>
         </div>
       </div>
