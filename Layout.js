@@ -50,6 +50,16 @@ export default function Layout({ children }) {
         }
       `}</style>
       
+      {/* הלוגו - קבוע בפינה הימנית העליונה */}
+      {/* מושך את הקובץ מתוך תיקיית public/logo.png */}
+      <div className="fixed top-4 right-4 z-50 pointer-events-none select-none">
+        <img 
+          src="/logo.png" 
+          alt="Iny's Recipes Logo" 
+          className="w-24 h-24 object-contain drop-shadow-md" 
+        />
+      </div>
+
       <main className="pb-20">
         {children}
       </main>

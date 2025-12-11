@@ -14,7 +14,7 @@ import {
   Loader2,
   Share2,
   BookOpen,
-  StickyNote // הוספתי אייקון להערות
+  StickyNote
 } from "lucide-react";
 import {
   AlertDialog,
@@ -35,6 +35,9 @@ export default function RecipeDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // שינוי: שימוש בתמונה המקומית
+  const defaultImage = "/defualt_img.png";
 
   useEffect(() => {
     if (!recipeId) return;
@@ -103,8 +106,6 @@ export default function RecipeDetail() {
       </div>
     );
   }
-
-  const defaultImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop";
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -241,7 +242,7 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* --- Notes Section (NEW) --- */}
+        {/* Notes */}
         {recipe.notes && (
           <section className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mt-6">
             <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
