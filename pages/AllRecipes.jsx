@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { getRecipes, getTags } from '@/firebaseService';
 import RecipeCard from '@/components/Recipes/RecipeCard';
 import SearchAndFilter from '@/components/Recipes/SearchAndFilter';
-import { Loader2 } from "lucide-react"; // הסרתי את Plus כי מחקנו את הכפתור
+import { Loader2 } from "lucide-react";
 import CsvExportImport from '@/components/Recipes/CsvExportImport';
 
 export default function AllRecipes() {
+  const router = useRouter();
+  
   const [recipes, setRecipes] = useState([]);
   const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [allTags, setAllTags] = useState([]);
@@ -15,6 +18,12 @@ export default function AllRecipes() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]); 
   const [sortOrder, setSortOrder] = useState('newest');
+
+  useEffect(() => {
+    if (router.isReady && router.query.tag) {
+      setSelectedTags([router.query.tag]);
+    }
+  }, [router.isReady, router.query.tag]);
 
   const fetchData = async () => {
     try {
@@ -81,12 +90,12 @@ export default function AllRecipes() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 text-right" dir="rtl">
-      {/* Header - הוספתי רקע גרדיאנט עדין במקום לבן נקי */}
+      {/* Header */}
       <header className="bg-gradient-to-b from-amber-100 via-amber-50 to-white sticky top-0 z-40 border-b border-amber-100 shadow-sm">
-        <div className="max-w-lg mx-auto px-4 py-6"> {/* הגדלתי קצת את ה-padding */}
+        <div className="max-w-lg mx-auto px-4 py-6">
           <div className="flex items-center justify-start gap-4 mb-4">
             
-            {/* הלוגו - הוגדל ל-w-20 h-20 */}
+            {/* הלוגו */}
             <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
               <img 
                 src="/logo.png" 
@@ -131,6 +140,8 @@ export default function AllRecipes() {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedTags([]);
+                  // ניקוי גם של ה-URL
+                  router.push('/AllRecipes', undefined, { shallow: true });
                 }}
                 className="mt-2 text-amber-600 hover:underline text-sm"
               >
@@ -140,8 +151,6 @@ export default function AllRecipes() {
           )}
         </div>
       </main>
-
-      {/* הסרתי את הכפתור הצף מכאן */}
     </div>
   );
 }
