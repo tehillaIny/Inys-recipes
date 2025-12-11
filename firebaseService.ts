@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
 
 // טיפוס תגית
 export interface Tag {
@@ -83,6 +83,18 @@ export async function addTag(name: string) {
     await addDoc(tagsRef, { name: trimmedName });
   } catch (err) {
     console.error("שגיאה בהוספת תגית:", err);
+    throw err;
+  }
+}
+
+// מחיקת מתכון לפי ID
+export async function deleteRecipe(recipeId: string) {
+  try {
+    const recipeRef = doc(db, "recipes", recipeId);
+    await deleteDoc(recipeRef);
+    console.log("מתכון נמחק בהצלחה:", recipeId);
+  } catch (err) {
+    console.error("שגיאה במחיקת מתכון:", err);
     throw err;
   }
 }

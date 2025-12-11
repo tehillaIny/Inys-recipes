@@ -2,11 +2,18 @@ import React from 'react';
 import { Clock } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { deleteRecipe } from "@/firebaseService";
 
 export default function RecipeCard({ recipe }) {
   const defaultImage =
     "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
+const handleDelete = async () => {
+  if (confirm("האם את בטוחה שברצונך למחוק את המתכון?")) {
+    await deleteRecipe(recipe.id);
+    window.location.reload(); 
+  }
+};
   return (
     <Link href={`/recipe/${recipe.id}`} className="block">
   <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-0 shadow-md rounded-xl">
