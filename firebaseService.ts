@@ -1,6 +1,10 @@
 import { db } from "./firebase";
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
 
+
+const CLOUDINARY_CLOUD_NAME = "dysrx5oeu";
+const CLOUDINARY_UPLOAD_PRESET = "inys_recipes";
+
 // טיפוס תגית
 export interface Tag {
   id: string;
@@ -95,6 +99,34 @@ export async function deleteRecipe(recipeId: string) {
     console.log("מתכון נמחק בהצלחה:", recipeId);
   } catch (err) {
     console.error("שגיאה במחיקת מתכון:", err);
+    throw err;
+  }
+}
+
+// ---------------------- IMAGES (CLOUDINARY) ----------------------
+
+export async function uploadImage(file: File): Promise<string> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("שגיאה בהעלאת התמונה ל-Cloudinary");
+    }
+
+    const data = await response.json();
+    return data.secure_url; 
+  } catch (err) {
+    console.error("שגיאה בהעלאת תמונה:", err);
     throw err;
   }
 }
