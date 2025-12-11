@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "inysrecipe",
+    "inysrecipes": "inysrecipe"
+  },
+  "targets": {},
+  "etags": {}
+}

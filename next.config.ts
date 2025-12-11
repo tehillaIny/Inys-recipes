@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'export',  // השורה הזו קריטית! היא אומרת לו לייצר קבצים סטטיים
+  images: {
+    unoptimized: true, // מונע בעיות עם תמונות בגרסה הסטטית
+  },
 };
 
 export default nextConfig;

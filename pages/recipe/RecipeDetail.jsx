@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/Badge"; // הנחתי שזה קיים, אם לא - תגידי לי
 import {
   ChevronRight,
   Pencil,
@@ -16,16 +15,6 @@ import {
   BookOpen,
   StickyNote
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export default function RecipeDetail() {
   const router = useRouter();
@@ -33,11 +22,11 @@ export default function RecipeDetail() {
 
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const localDefaultImage = "/defualt_img.jpg";
-  // הקישור הישן ששמור ב-DB וצריך להתעלם ממנו
+  // תמונת ברירת מחדל מקומית
+  const defaultImage = "/defualt_img.png";
+  // זיהוי הקישור הישן מ-Unsplash
   const oldUnsplashImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
   useEffect(() => {
@@ -64,36 +53,46 @@ export default function RecipeDetail() {
     fetchRecipe();
   }, [recipeId]);
 
+  // פונקציית מחיקה פשוטה עם אישור דפדפן
   const handleDelete = async () => {
     if (!recipeId) return;
-    setDeleting(true);
-    try {
-      await deleteDoc(doc(db, "recipes", recipeId));
-      router.push('/AllRecipes');
-    } catch (err) {
-      console.error("שגיאה במחיקת המתכון:", err);
-    } finally {
-      setDeleting(false);
+    
+    if (window.confirm('האם את בטוחה שברצונך למחוק את המתכון הזה?')) {
+      setDeleting(true);
+      try {
+        await deleteDoc(doc(db, "recipes", recipeId));
+        router.push('/AllRecipes');
+      } catch (err) {
+        console.error("שגיאה במחיקת המתכון:", err);
+        alert("אירעה שגיאה במחיקה");
+        setDeleting(false);
+      }
     }
   };
 
   const handleShare = async () => {
     if (navigator.share && recipe) {
-      await navigator.share({
-        title: recipe.name,
-        text: recipe.description || recipe.name,
-        url: window.location.href,
-      });
+      try {
+        await navigator.share({
+          title: recipe.name,
+          text: recipe.description || recipe.name,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      // גיבוי למקרה שהדפדפן לא תומך בשיתוף
+      navigator.clipboard.writeText(window.location.href);
+      alert('הקישור הועתק ללוח!');
     }
   };
 
   // פונקציית עזר לבחירת התמונה הנכונה
   const getDisplayImage = () => {
-    if (!recipe?.imageUrl) return localDefaultImage;
-    if (recipe.imageUrl === oldUnsplashImage) return localDefaultImage;
-    // בדיקה נוספת: לפעמים הקישור ב-DB מכיל פרמטרים שונים במקצת
-    if (recipe.imageUrl.includes("images.unsplash.com/photo-1546069901")) return localDefaultImage;
-    
+    if (!recipe?.imageUrl) return defaultImage;
+    if (recipe.imageUrl === oldUnsplashImage) return defaultImage;
+    if (recipe.imageUrl.includes("images.unsplash.com/photo-1546069901")) return defaultImage;
     return recipe.imageUrl;
   };
 
@@ -109,14 +108,20 @@ export default function RecipeDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 text-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">המתכון לא נמצא</h2>
-          <Button onClick={() => router.push('/AllRecipes')}>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">המתכון לא נמצא</h2>
+          <button 
+            onClick={() => router.push('/AllRecipes')}
+            className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full font-medium transition-colors shadow-sm"
+          >
             חזור לכל המתכונים
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
+
+  // סגנונות לכפתורי האייקונים
+  const iconButtonClass = "p-2.5 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all active:scale-95 flex items-center justify-center";
 
   return (
     <div className="min-h-screen bg-white pb-24 text-right" dir="rtl">
@@ -126,67 +131,77 @@ export default function RecipeDetail() {
           src={getDisplayImage()}
           alt={recipe.name}
           className="w-full h-full object-cover"
-          onError={(e) => e.target.src = localDefaultImage}
+          onError={(e) => e.target.src = defaultImage}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         {/* Header Actions */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="bg-white/90 backdrop-blur-sm hover:bg-white"
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-10">
+          
+          {/* כפתור חזרה */}
+          <button
             onClick={() => router.back()}
+            className={`${iconButtonClass} text-gray-700`}
+            title="חזור"
           >
             <ChevronRight className="w-5 h-5" />
-          </Button>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="bg-white/90 backdrop-blur-sm hover:bg-white"
+          </button>
+
+          <div className="flex gap-3">
+            {/* כפתור שיתוף */}
+            <button
               onClick={handleShare}
+              className={`${iconButtonClass} text-gray-700`}
+              title="שתף"
             >
-              <Share2 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="bg-white/90 backdrop-blur-sm hover:bg-white"
+              <Share2 className="w-5 h-5" />
+            </button>
+
+            {/* כפתור עריכה */}
+            <button
               onClick={() => router.push(`/EditRecipe?id=${recipeId}`)}
+              className={`${iconButtonClass} text-blue-600 hover:text-blue-700 hover:bg-blue-50`}
+              title="ערוך מתכון"
             >
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="bg-white/90 backdrop-blur-sm hover:bg-white text-red-500 hover:text-red-600"
-              onClick={() => setShowDeleteDialog(true)}
+              <Pencil className="w-5 h-5" />
+            </button>
+
+            {/* כפתור מחיקה */}
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className={`${iconButtonClass} text-red-500 hover:text-red-600 hover:bg-red-50`}
+              title="מחק מתכון"
             >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+              {deleting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Trash2 className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Title */}
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg text-right">
+        {/* Title & Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg text-right leading-tight">
             {recipe.name}
           </h1>
-          <div className="flex items-center gap-4 text-white/80 text-sm">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-4 text-white/90 text-sm font-medium">
+            <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-md">
               <Clock className="w-4 h-4" />
               {recipe.created_date ? format(new Date(recipe.created_date), 'dd/MM/yyyy') : '-'}
             </span>
+            
             {recipe.sourceUrl && (
               <a 
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg backdrop-blur-md hover:bg-white/20 transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
-                מקור
+                מקור המתכון
               </a>
             )}
           </div>
@@ -194,14 +209,15 @@ export default function RecipeDetail() {
       </div>
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
+        
         {/* Tags */}
-        {recipe.tags?.length > 0 && (
+        {recipe.tags && recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-start">
             {recipe.tags.map((tag, i) => (
               <Badge 
                 key={i}
-                className="bg-amber-100 text-amber-800 hover:bg-amber-200"
+                className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 px-3 py-1 text-sm"
               >
                 {tag}
               </Badge>
@@ -211,42 +227,44 @@ export default function RecipeDetail() {
 
         {/* Description */}
         {recipe.description && (
-          <p className="text-gray-600 text-lg leading-relaxed text-right">
+          <div className="text-gray-600 text-lg leading-relaxed text-right">
             {recipe.description}
-          </p>
+          </div>
         )}
 
         {/* Ingredients */}
         {recipe.ingredients && (
-          <section className="bg-amber-50 rounded-2xl p-5">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-amber-700" />
+          <section className="bg-amber-50/50 border border-amber-100 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3 border-b border-amber-200 pb-2">
+              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center text-amber-800">
+                <BookOpen className="w-5 h-5" />
               </div>
               מרכיבים
             </h2>
-            <div className="space-y-2">
+            <ul className="space-y-3">
               {recipe.ingredients.split('\n').filter(Boolean).map((line, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <li key={i} className="flex items-start gap-3">
                   <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-700 text-right">{line}</span>
-                </div>
+                  <span className="text-gray-700 text-right leading-relaxed font-medium">{line}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
 
         {/* Method */}
         {recipe.method && (
           <section>
-            <h2 className="text-lg font-bold text-gray-800 mb-4 text-right">אופן הכנה</h2>
-            <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 mb-5 text-right border-b border-gray-100 pb-2">
+              אופן ההכנה
+            </h2>
+            <div className="space-y-6">
               {recipe.method.split('\n').filter(Boolean).map((step, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                <div key={i} className="flex gap-4 group">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
                     {i + 1}
                   </div>
-                  <p className="text-gray-700 pt-1 leading-relaxed text-right">{step}</p>
+                  <p className="text-gray-700 pt-1 leading-relaxed text-right text-lg">{step}</p>
                 </div>
               ))}
             </div>
@@ -255,7 +273,7 @@ export default function RecipeDetail() {
 
         {/* Notes */}
         {recipe.notes && (
-          <section className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mt-6">
+          <section className="bg-yellow-50 border-r-4 border-yellow-400 rounded-lg p-5 mt-8 shadow-sm">
             <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
               <StickyNote className="w-5 h-5" />
               הערות אישיות
@@ -267,29 +285,6 @@ export default function RecipeDetail() {
         )}
 
       </div>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-right">מחיקת מתכון</AlertDialogTitle>
-            <AlertDialogDescription className="text-right">
-              האם אתה בטוח שברצונך למחוק את המתכון "{recipe.name}"? פעולה זו אינה ניתנת לביטול.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row-reverse gap-2 sm:justify-start">
-            <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600"
-              disabled={deleting}
-            >
-              {deleting && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-              מחק
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
