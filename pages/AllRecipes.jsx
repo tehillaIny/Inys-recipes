@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { getRecipes, getTags } from '@/firebaseService';
+import { getRecipes, getTags, updateRecipe } from '@/firebaseService';
 import RecipeCard from '@/components/Recipes/RecipeCard';
 import SearchAndFilter from '@/components/Recipes/SearchAndFilter';
 import { Loader2 } from "lucide-react";

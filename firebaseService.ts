@@ -17,7 +17,16 @@ export interface Tag {
 export async function addRecipe(data: any) {
   try {
     const recipesRef = collection(db, "recipes");
-    const docRef = await addDoc(recipesRef, data);
+    
+    // יצירת אובייקט חדש שמכיל את המידע שהתקבל + תאריכים
+    const recipeWithDates = {
+      ...data,
+      created_date: new Date().toISOString(),
+      updated_date: new Date().toISOString(),
+      createdBy: data.createdBy || "" // שדה יוצר (אם קיים)
+    };
+
+    const docRef = await addDoc(recipesRef, recipeWithDates);
     console.log("מתכון נוסף עם ID:", docRef.id);
     return docRef;
   } catch (err) {
@@ -170,7 +179,14 @@ export async function syncMissingTags() {
 export async function updateRecipe(id: string, data: any) {
   try {
     const recipeRef = doc(db, "recipes", id);
-    await updateDoc(recipeRef, data);
+    
+    // הוספת תאריך עדכון למידע שנשלח לעדכון
+    const dataWithUpdateDate = {
+      ...data,
+      updated_date: new Date().toISOString()
+    };
+
+    await updateDoc(recipeRef, dataWithUpdateDate);
     console.log("מתכון עודכן בהצלחה:", id);
   } catch (err) {
     console.error("שגיאה בעדכון מתכון:", err);

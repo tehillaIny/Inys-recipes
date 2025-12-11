@@ -9,9 +9,10 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     tags: [],
     ingredients: '',
     method: '',
-    notes: '', // הוספנו את שדה ההערות
+    notes: '', 
     imageUrl: '',
-    sourceUrl: ''
+    sourceUrl: '',
+    createdBy: '' // <--- הוספנו את השדה כאן
   });
   
   const [imageMode, setImageMode] = useState('url'); 
@@ -30,9 +31,10 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         tags: recipe.tags || [],
         ingredients: recipe.ingredients || '',
         method: recipe.method || '',
-        notes: recipe.notes || '', // טעינת הערות קיימות
+        notes: recipe.notes || '',
         imageUrl: recipe.imageUrl || '',
-        sourceUrl: recipe.sourceUrl || ''
+        sourceUrl: recipe.sourceUrl || '',
+        createdBy: recipe.createdBy || '' // <--- טעינת השדה בעריכה
       });
       if (recipe.imageUrl) {
         setImageMode('url'); 
@@ -140,6 +142,19 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         />
       </div>
 
+      {/* שדה נוסף על ידי - חדש! */}
+      <div>
+        <label htmlFor="createdBy" className={labelClass}>נוסף על ידי (שם)</label>
+        <input
+          id="createdBy"
+          type="text"
+          value={formData.createdBy}
+          onChange={(e) => handleChange('createdBy', e.target.value)}
+          placeholder="הקלידי את שמך..."
+          className={inputClass}
+        />
+      </div>
+
       {/* תיאור קצר */}
       <div>
         <label htmlFor="description" className={labelClass}>תיאור קצר</label>
@@ -184,12 +199,12 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
                 <ImageIcon className="w-4 h-4 text-gray-400" />
              </div>
              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => handleChange('imageUrl', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className={`${inputClass} pl-10`}
-                dir="ltr"
+               type="url"
+               value={formData.imageUrl}
+               onChange={(e) => handleChange('imageUrl', e.target.value)}
+               placeholder="https://example.com/image.jpg"
+               className={`${inputClass} pl-10`}
+               dir="ltr"
              />
              {formData.imageUrl && (
                <div className="mt-2 w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
@@ -285,7 +300,7 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
         />
       </div>
 
-      {/* --- שדה הערות החדש --- */}
+      {/* הערות אישיות */}
       <div>
         <label htmlFor="notes" className={labelClass}>הערות אישיות</label>
         <textarea
