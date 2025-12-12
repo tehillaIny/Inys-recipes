@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 };
-module.exports = {
+/*module.exports = {
   output: 'export',
-};
+};*/
 
 export default nextConfig;
