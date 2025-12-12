@@ -1,0 +1,67 @@
+[debug] [2025-12-12T09:09:12.887Z] ----------------------------------------------------------------------
+[debug] [2025-12-12T09:09:12.917Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\תהילה\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2025-12-12T09:09:12.918Z] CLI Version:   15.0.0
+[debug] [2025-12-12T09:09:12.918Z] Platform:      win32
+[debug] [2025-12-12T09:09:12.919Z] Node Version:  v22.20.0
+[debug] [2025-12-12T09:09:12.921Z] Time:          Fri Dec 12 2025 11:09:12 GMT+0200 (שעון ישראל (חורף))
+[debug] [2025-12-12T09:09:12.922Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\תהילה\Documents\מתכונים\Iny'sRecipes\inys-recipes
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2025-12-12T09:09:20.891Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-12T09:09:20.891Z] > authorizing via signed-in user (tehilla.iny@gmail.com)
+[debug] [2025-12-12T09:09:20.894Z] Checked if tokens are valid: false, expires at: 1765485520213
+[debug] [2025-12-12T09:09:20.895Z] Checked if tokens are valid: false, expires at: 1765485520213
+[debug] [2025-12-12T09:09:20.896Z] > refreshing access token with scopes: []
+[debug] [2025-12-12T09:09:20.900Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-12T09:09:20.901Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-12T09:09:21.409Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-12T09:09:21.409Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-12T09:09:21.425Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe [none]
+[debug] [2025-12-12T09:09:21.898Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe 200
+[debug] [2025-12-12T09:09:21.899Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe {"projectId":"inysrecipe","projectNumber":"584173368388","displayName":"InysRecipe","name":"projects/inysrecipe","resources":{"hostingSite":"inysrecipe"},"state":"ACTIVE","etag":"1_cd46a781-7ef5-475f-8807-2f29df780721"}
+[info] i  Using project inysrecipe (InysRecipe) . 
+[info] 
+=== Hosting Setup
+[debug] [2025-12-12T09:09:21.915Z] Checked if tokens are valid: true, expires at: 1765534160409
+[debug] [2025-12-12T09:09:21.915Z] Checked if tokens are valid: true, expires at: 1765534160409
+[debug] [2025-12-12T09:09:21.916Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe [none]
+[debug] [2025-12-12T09:09:22.123Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe 200
+[debug] [2025-12-12T09:09:22.123Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/inysrecipe {"projectId":"inysrecipe","projectNumber":"584173368388","displayName":"InysRecipe","name":"projects/inysrecipe","resources":{"hostingSite":"inysrecipe"},"state":"ACTIVE","etag":"1_cd46a781-7ef5-475f-8807-2f29df780721"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
+[debug] [2025-12-12T09:11:58.379Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\תהילה\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:519:28)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1128:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:271:20)
+    at ReadStream.emit (node:events:531:35)
+    at emitKeys (node:internal/readline/utils:370:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+    at ReadStream.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+[error] 
+[error] Error: An unexpected error has occurred.
