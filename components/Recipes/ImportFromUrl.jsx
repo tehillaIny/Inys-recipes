@@ -13,11 +13,11 @@ export default function ImportFromUrl({ onImport, onCancel }) {
     setError('');
 
     try {
-      const res = await fetch('/api/scrape', {
+      const res = await fetch('https://inys-recipes.vercel.app/api/scrape', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
-      });
+});
 
       const data = await res.json();
 
