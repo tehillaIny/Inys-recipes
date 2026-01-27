@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  //output: 'export',
+  output: 'export',
   images: {
     unoptimized: true,
   },
@@ -10,4 +11,6 @@ const nextConfig: NextConfig = {
   output: 'export',
 };*/
 
+
 export default nextConfig;
+

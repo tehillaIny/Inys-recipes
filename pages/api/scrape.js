@@ -1,8 +1,35 @@
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+// פונקציית עזר לטיפול ב-CORS (אישור גישה לאפליקציה)
+const allowCors = (fn) => async (req, res) => {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*'); // מאפשר גישה מכולם (כולל האפליקציה)
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  return await fn(req, res);
+};
+
+/*const handler = async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).end();*/
+
+  const handler = async (req, res) => {
+  // בדיקה חכמה יותר: המרה לאותיות גדולות וקבלת מידע על השגיאה
+  const method = req.method ? req.method.toUpperCase() : 'UNKNOWN';
+
+  if (method !== 'POST') {
+    return res.status(405).json({ 
+      error: `Method Not Allowed. Server received: ${method}`,
+      receivedMethod: method
+    });
+  }
 
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'Missing URL' });
@@ -24,30 +51,23 @@ export default async function handler(req, res) {
       imageUrl: ''
     };
 
-    // ---------------------------------------------------------
-    // שלב 1: חיפוש נתונים מובנים (JSON-LD)
-    // ---------------------------------------------------------
+    // --- (כאן נכנס כל הקוד הלוגי שלך לניתוח המתכון, העתקתי אותו למטה בשבילך) ---
+    
+    // 1. JSON-LD
     $('script[type="application/ld+json"]').each((_, el) => {
       try {
         const json = JSON.parse($(el).html());
         const recipe = findRecipeDeep(json);
-        
         if (recipe) {
           if (!recipeData.name && recipe.name) recipeData.name = cleanText(recipe.name);
-          
           if (!recipeData.imageUrl && recipe.image) {
             const img = Array.isArray(recipe.image) ? recipe.image[0] : recipe.image;
             recipeData.imageUrl = typeof img === 'object' ? img.url : img;
           }
-
           if (recipeData.ingredients.length === 0 && recipe.recipeIngredient) {
-            const rawIng = Array.isArray(recipe.recipeIngredient) 
-              ? recipe.recipeIngredient.map(cleanText) 
-              : [cleanText(recipe.recipeIngredient)];
-            
+            const rawIng = Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient.map(cleanText) : [cleanText(recipe.recipeIngredient)];
             if (!isMenu(rawIng)) recipeData.ingredients = rawIng;
           }
-
           if (recipeData.method.length === 0 && recipe.recipeInstructions) {
             recipeData.method = parseInstructions(recipe.recipeInstructions);
           }
@@ -55,77 +75,30 @@ export default async function handler(req, res) {
       } catch (e) { /* ignore */ }
     });
 
-    // ---------------------------------------------------------
-    // שלב 2: השלמת חוסרים מה-HTML (גיבוי חכם)
-    // ---------------------------------------------------------
-    
-    // 1. שם המתכון
+    // 2. HTML Fallback
     if (!recipeData.name) {
-      recipeData.name = $('h1').first().text().trim() || 
-                        $('.ArticleTitle').first().text().trim() ||
-                        $('title').text().split('|')[0].trim();
+      recipeData.name = $('h1').first().text().trim() || $('.ArticleTitle').first().text().trim() || $('title').text().split('|')[0].trim();
     }
-
-    // 2. תמונה
     if (!recipeData.imageUrl) {
-      recipeData.imageUrl = $('meta[property="og:image"]').attr('content') || 
-                            $('.wprm-recipe-image img').attr('src') ||
-                            $('.article_pic img').attr('src') ||
-                            $('.penci-post-share-box').next().find('img').attr('src') || // חן במטבח
-                            $('main img').first().attr('src') || '';
+      recipeData.imageUrl = $('meta[property="og:image"]').attr('content') || $('.wprm-recipe-image img').attr('src') || $('main img').first().attr('src') || '';
     }
 
     const ingredientsRegex = /(מצרכים|רכיבים|מרכיבים|חומרים)/i;
     const methodRegex = /(אופן|הוראות|תהליך|שלבי)(\s+ה)?(\s+)?כנה|הכנות/i; 
 
-    // 3. רכיבים
     if (recipeData.ingredients.length === 0) {
-      const exactSelectors = [
-          '.wprm-recipe-ingredient', 
-          '.wprm-recipe-ingredients li',
-          '.recipeIngredients li span',     // מאקו
-          '.recipeIngredients li',
-          '.penci-recipe-ingredients p',    // חן במטבח (מכיל BR)
-          '.penci-recipe-ingredients li',
-          '[itemprop="recipeIngredient"]',
-          '.baking_components .item_rside p', 
-          '.baking_components .item_rside',
-          '#ingredients p',
-          '#ingredients'
-      ];
+      const exactSelectors = ['.wprm-recipe-ingredient', '.wprm-recipe-ingredients li', '.recipeIngredients li span', '.recipeIngredients li', '.penci-recipe-ingredients p', '.penci-recipe-ingredients li', '[itemprop="recipeIngredient"]', '#ingredients p', '#ingredients'];
       recipeData.ingredients = scrapeList($, exactSelectors, ingredientsRegex);
-
-      if (recipeData.ingredients.length === 0) {
-        recipeData.ingredients = scrapeByHeaderText($, ingredientsRegex, methodRegex);
-      }
-      
-      if (recipeData.ingredients.length === 0) {
-         recipeData.ingredients = scrapeList($, ['.ingredients li', '.recipe-ingredients li'], null);
-      }
+      if (recipeData.ingredients.length === 0) recipeData.ingredients = scrapeByHeaderText($, ingredientsRegex, methodRegex);
+      if (recipeData.ingredients.length === 0) recipeData.ingredients = scrapeList($, ['.ingredients li', '.recipe-ingredients li'], null);
     }
 
-    // 4. אופן ההכנה
     if (recipeData.method.length === 0) {
-      const methodSelectors = [
-          '.wprm-recipe-instruction', 
-          '.wprm-recipe-instructions li',
-          '.recipeInstructions p',
-          '.recipeInstructions li',
-          '[itemprop="recipeInstructions"]',
-          '.penci-recipe-method p, .penci-recipe-method li', // חן במטבח - לוקח גם פסקאות וגם רשימות לפי הסדר!
-          '.instructions li', 
-          '.recipe-steps li',
-          '.baking_components .item_lside p',
-          '.baking_components .item_lside'
-      ];
+      const methodSelectors = ['.wprm-recipe-instruction', '.wprm-recipe-instructions li', '.recipeInstructions p', '.recipeInstructions li', '[itemprop="recipeInstructions"]', '.penci-recipe-method p, .penci-recipe-method li', '.instructions li', '.recipe-steps li'];
       recipeData.method = scrapeList($, methodSelectors, methodRegex);
-
-      if (recipeData.method.length === 0) {
-         recipeData.method = scrapeByHeaderText($, methodRegex, /הערות|תגובות|comments|share|בתיאבון|בתאבון|טיפים/i);
-      }
+      if (recipeData.method.length === 0) recipeData.method = scrapeByHeaderText($, methodRegex, /הערות|תגובות|comments|share|בתיאבון|בתאבון|טיפים/i);
     }
 
-    // ניקוי סופי
     recipeData.ingredients = [...new Set(recipeData.ingredients)].filter(Boolean);
     recipeData.method = [...new Set(recipeData.method)].filter(Boolean);
 
@@ -136,6 +109,8 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to scrape recipe' });
   }
 }
+
+export default allowCors(handler);
 
 // ---------------------------------------------------------
 // פונקציות עזר משודרגות

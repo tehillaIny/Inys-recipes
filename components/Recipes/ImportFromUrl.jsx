@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link2, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { CapacitorHttp } from '@capacitor/core';
 
 export default function ImportFromUrl({ onImport, onCancel }) {
   const [url, setUrl] = useState('');
@@ -12,7 +13,7 @@ export default function ImportFromUrl({ onImport, onCancel }) {
     setLoading(true);
     setError('');
 
-    try {
+    /*try {
       const res = await fetch('https://inys-recipes.vercel.app/api/scrape', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,12 +36,46 @@ export default function ImportFromUrl({ onImport, onCancel }) {
 
     } catch (err) {
       console.error(err);
+            alert("ERROR DETAILS: " + err.message); 
+      setError('לא הצלחנו לחלץ את המתכון מהקישור.');
+    } finally {
+      setLoading(false);
+    }
+  };*/
+
+  try {
+      const response = await CapacitorHttp.post({
+        url: 'https://inys-recipes.vercel.app/api/scrape',
+        headers: { 'Content-Type': 'application/json' },
+        data: { url: url } // שמים לב: כאן זה data ולא body
+      });
+
+      // בדיקה אם השרת החזיר תשובה תקינה (200)
+      if (response.status !== 200) {
+          throw new Error(response.data.error || 'Scraping failed with status ' + response.status);
+      }
+
+      // ב-CapacitorHttp, המידע כבר מגיע מפורק בתוך .data
+      const data = response.data;
+
+      // מחזיר לטופס העריכה
+      onImport({
+        name: data.name || '',
+        description: '', 
+        ingredients: (data.ingredients || []).join('\n'),
+        method: (data.method || []).join('\n'),
+        imageUrl: data.imageUrl || '',
+        sourceUrl: url
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("ERROR: " + (err.message || JSON.stringify(err))); 
       setError('לא הצלחנו לחלץ את המתכון מהקישור.');
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 max-w-md mx-auto">
       <div className="space-y-4">

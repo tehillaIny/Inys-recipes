@@ -1,0 +1,5 @@
+package com.inysrecipes.app;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}
