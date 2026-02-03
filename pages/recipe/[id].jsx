@@ -1,4 +1,3 @@
-// pages/recipe/[id].jsx
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -167,7 +166,7 @@ export default function RecipeDetail() {
             {recipe.name}
           </h1>
 
-          <div className="flex items-center gap-4 text-white/80 text-sm justify-end">
+          <div className="flex items-center gap-4 text-white/80 text-sm justify-end pointer-events-auto">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               {recipe.created_date ? format(new Date(recipe.created_date), 'dd/MM/yyyy') : '-'}
@@ -179,6 +178,7 @@ export default function RecipeDetail() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:text-white transition-colors"
+                onClick={(e) => e.stopPropagation()}
               >
                 <ExternalLink className="w-4 h-4" />
                 מקור
@@ -284,7 +284,8 @@ export default function RecipeDetail() {
             </div>
           </section>
         )}
-        {/* Notes / הערות אישיות */}
+
+        {/* Notes */}
         {recipe.notes && (
           <section className="bg-yellow-50 border-r-4 border-yellow-400 rounded-lg p-5 mt-8 shadow-sm">
             <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
@@ -296,6 +297,7 @@ export default function RecipeDetail() {
             </p>
           </section>
         )}
+
       </div>
     </div>
   );
