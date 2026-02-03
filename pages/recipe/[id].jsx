@@ -14,7 +14,8 @@ import {
   Loader2,
   Share2,
   BookOpen,
-  X
+  X,
+  StickyNote
 } from "lucide-react";
 
 export default function RecipeDetail() {
@@ -281,6 +282,18 @@ export default function RecipeDetail() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+        {/* Notes / הערות אישיות */}
+        {recipe.notes && (
+          <section className="bg-yellow-50 border-r-4 border-yellow-400 rounded-lg p-5 mt-8 shadow-sm">
+            <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
+              <StickyNote className="w-5 h-5" />
+              הערות אישיות
+            </h2>
+            <p className="text-yellow-900/90 whitespace-pre-line leading-relaxed text-right">
+              {recipe.notes}
+            </p>
           </section>
         )}
       </div>
