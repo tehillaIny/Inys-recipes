@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock } from "lucide-react";
+import { Clock, Images } from "lucide-react"; // ייבאנו את Images מה-Lucide
 import Link from "next/link";
 import { format } from "date-fns";
 import { deleteRecipe } from "@/firebaseService";
@@ -15,13 +15,26 @@ export default function RecipeCard({ recipe }) {
     }
   };
 
+  const displayImage = recipe.imageUrls?.length > 0 
+    ? recipe.imageUrls[0] 
+    : (recipe.imageUrl || defaultImage);
+
   return (
     <Link href={`/recipe/${recipe.id}`} className="block">
       <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-0 shadow-md rounded-xl h-full flex flex-col">
         {/* IMAGE */}
         <div className="relative h-48 overflow-hidden rounded-t-xl shrink-0">
+          
+          {/* תגית שמציגה כמה תמונות יש (אם יש יותר מ-1) */}
+          {recipe.imageUrls?.length > 1 && (
+            <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1.5 z-10 shadow-sm">
+              <Images className="w-3.5 h-3.5 text-amber-400" />
+              {recipe.imageUrls.length}
+            </div>
+          )}
+
           <img
-            src={recipe.imageUrl || defaultImage}
+            src={displayImage}
             alt={recipe.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             onError={(e) => (e.currentTarget.src = defaultImage)}
