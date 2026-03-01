@@ -1,6 +1,6 @@
 // firebase.js
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAOw7tmQsbEN1Oww5ffeOgqOUPN3BwG8IM",
@@ -12,5 +12,19 @@ const firebaseConfig = {
   measurementId: "G-JSZFRPG6KY"
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// 1. מאתחל את האפליקציה רק אם היא עדיין לא קיימת
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+let db;
+
+// 2. מנסה לאתחל את מסד הנתונים עם מצב אופליין
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (error) {
+  // אם זה נכשל (בגלל שזה כבר רץ ב-Hot Reload), הוא פשוט ימשוך את המצב הקיים
+  db = getFirestore(app);
+}
+
+export { db };
