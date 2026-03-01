@@ -6,6 +6,7 @@ import RecipeCard from '@/components/Recipes/RecipeCard';
 import SearchAndFilter from '@/components/Recipes/SearchAndFilter';
 import { Loader2 } from "lucide-react";
 import CsvExportImport from '@/components/Recipes/CsvExportImport';
+import { Scale } from "lucide-react";
 
 export default function AllRecipes() {
   const router = useRouter();
@@ -129,21 +130,33 @@ export default function AllRecipes() {
       {/* Header */}
       <header className="bg-gradient-to-b from-amber-100 via-amber-50 to-white sticky top-0 z-40 border-b border-amber-100 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-6">
-          <div className="flex items-center justify-start gap-4 mb-4">
+          {/* שינינו ל-justify-between כדי שיהיה מקום לכפתור בצד השני */}
+          <div className="flex items-center justify-between mb-4">
             
-            <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
-              <img 
-                src="/logo.png" 
-                alt="Logo" 
-                className="w-full h-full object-contain"
-              />
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
+                <img 
+                  src="/logo.png" 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-800 tracking-tight drop-shadow-sm">
+                המתכונים שלי
+              </h1>
             </div>
-            
-            <h1 className="text-3xl font-bold text-gray-800 tracking-tight drop-shadow-sm">
-              המתכונים שלי
-            </h1>
-          </div>
 
+            {/* הכפתור החדש לטבלת ההמרות */}
+            <button 
+              onClick={() => router.push('/Conversions')}
+              className="bg-white/80 hover:bg-white p-2.5 rounded-full shadow-sm border border-amber-200 text-amber-600 transition-all hover:scale-105 active:scale-95"
+              title="טבלת המרות"
+            >
+              <Scale className="w-6 h-6" />
+            </button>
+
+          </div>
+          
           <SearchAndFilter 
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
