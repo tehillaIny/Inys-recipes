@@ -1,4 +1,3 @@
-// firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
@@ -12,19 +11,17 @@ const firebaseConfig = {
   measurementId: "G-JSZFRPG6KY"
 };
 
-// 1. מאתחל את האפליקציה רק אם היא עדיין לא קיימת
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-let db;
-
-// 2. מנסה לאתחל את מסד הנתונים עם מצב אופליין
-try {
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-  });
-} catch (error) {
-  // אם זה נכשל (בגלל שזה כבר רץ ב-Hot Reload), הוא פשוט ימשוך את המצב הקיים
-  db = getFirestore(app);
-}
+// שימוש בפונקציה שמפעילה את עצמה מיד (IIFE) - פותר את שגיאת ה-TypeScript!
+const db = (() => {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch (error) {
+    return getFirestore(app);
+  }
+})();
 
 export { db };

@@ -2,13 +2,13 @@ import React from "react";
 import { Search, X, SlidersHorizontal, ArrowUpDown, Check } from "lucide-react";
 
 export default function SearchAndFilter({
-  searchQuery,
-  setSearchQuery,
-  selectedTags,
-  setSelectedTags,
-  allTags,
-  sortOrder,
-  setSortOrder,
+  searchQuery = "",
+  setSearchQuery = () => {},
+  selectedTags = [],
+  setSelectedTags = () => {},
+  allTags = [],
+  sortOrder = "newest",
+  setSortOrder = () => {},
 }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
   const [sortOpen, setSortOpen] = React.useState(false);
@@ -55,13 +55,13 @@ export default function SearchAndFilter({
         <button
           onClick={() => { setFilterOpen(!filterOpen); setSortOpen(false); }}
           className={`w-12 h-12 flex items-center justify-center rounded-full shadow-sm transition-all flex-shrink-0 ${
-            selectedTags.length > 0 || filterOpen
+            selectedTags?.length > 0 || filterOpen
               ? "bg-amber-500 text-white"
               : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
           }`}
         >
           <SlidersHorizontal className="w-5 h-5" />
-          {selectedTags.length > 0 && (
+          {selectedTags?.length > 0 && (
             <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
               {selectedTags.length}
             </span>
@@ -111,7 +111,7 @@ export default function SearchAndFilter({
         <div className="bg-white p-5 rounded-3xl shadow-lg border border-gray-100 text-right animate-in slide-in-from-top-2 z-40 relative">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-gray-800 text-lg">סינון לפי קטגוריות</h3>
-            {selectedTags.length > 0 && (
+            {selectedTags?.length > 0 && (
               <button
                 className="text-amber-600 hover:text-amber-700 text-sm font-medium px-2 py-1 rounded-lg hover:bg-amber-50 transition-colors"
                 onClick={clearFilters}
@@ -122,11 +122,11 @@ export default function SearchAndFilter({
           </div>
           
           <div className="flex flex-wrap gap-2.5 justify-start max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-            {allTags.map((tag) => (
+            {allTags?.map((tag) => (
               <span
                 key={tag.id}
                 className={`cursor-pointer transition-all rounded-xl px-3.5 py-2 text-sm font-medium flex items-center gap-1.5 select-none ${
-                  selectedTags.includes(tag.name)
+                  selectedTags?.includes(tag.name)
                     ? "bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-[1.02]"
                     : "bg-gray-50 text-gray-600 hover:bg-amber-50 hover:text-amber-700 border border-gray-100"
                 }`}
@@ -140,7 +140,7 @@ export default function SearchAndFilter({
       )}
 
       {/* תגיות נבחרות (Pills) מתחת לחיפוש */}
-      {!filterOpen && selectedTags.length > 0 && (
+      {!filterOpen && selectedTags?.length > 0 && (
         <div className="flex flex-wrap gap-2 justify-start pt-1">
           {selectedTags.map((tag) => (
             <span
