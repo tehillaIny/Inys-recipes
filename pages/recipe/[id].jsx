@@ -19,9 +19,10 @@ import {
   X,
   Maximize2,
   Images,
-  ListChecks, // אייקון חדש למצב צ'קליסט
-  CheckCircle2, // אייקון וי מלא
-  Circle // אייקון עיגול ריק
+  ListChecks, 
+  CheckCircle2, 
+  Circle,
+  Calculator // נוסף אייקון למחשבון (למרות שכפתורי המכפלות יעשו את העבודה)
 } from "lucide-react";
 
 export default function RecipePage() {
@@ -35,10 +36,13 @@ export default function RecipePage() {
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // --- סטייט למצב צ'קליסט (בישול) ---
+  // --- סטייט למצב צ'קליסט ---
   const [isChecklistMode, setIsChecklistMode] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState(new Set());
   const [checkedSteps, setCheckedSteps] = useState(new Set());
+
+  // --- סטייט למחשבון כמויות (מכפיל) ---
+  const [scaleFactor, setScaleFactor] = useState(1);
 
   const defaultImage = "/defualt_img.jpg";
   const oldUnsplashImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
@@ -115,6 +119,60 @@ export default function RecipePage() {
     if (newSet.has(index)) newSet.delete(index);
     else newSet.add(index);
     setCheckedSteps(newSet);
+  };
+
+  // --- פונקציה חכמה להכפלת כמויות במצרכים ---
+  const scaleIngredient = (line, scale) => {
+    if (scale === 1) return line;
+
+    let replaced = false; // מוודא שנכפיל רק את המספר הראשון בשורה כדי לא להרוס (למשל "תבנית 24")
+    
+    return line.replace(/(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/, (match) => {
+      if (replaced) return match;
+      replaced = true;
+
+      let num = 0;
+      // זיהוי שברים (כמו 1/2 או 1 1/2)
+      if (match.includes('/')) {
+        const parts = match.trim().split(/\s+/);
+        if (parts.length === 2) {
+          const [whole, frac] = parts;
+          const [n, d] = frac.split('/');
+          num = parseInt(whole) + parseInt(n) / parseInt(d);
+        } else {
+          const [n, d] = match.split('/');
+          num = parseInt(n) / parseInt(d);
+        }
+      } else {
+        // זיהוי מספר רגיל או עשרוני
+        num = parseFloat(match);
+      }
+
+      const scaledNum = num * scale;
+      
+      // המרה חזרה למספר יפה או שבר
+      const formatNumber = (n) => {
+        if (Number.isInteger(n)) return n.toString();
+        
+        const whole = Math.floor(n);
+        const fraction = n - whole;
+        const f = Math.round(fraction * 100) / 100; // עיגול קל
+        
+        let fracStr = '';
+        if (f === 0.5) fracStr = '1/2';
+        else if (f === 0.25) fracStr = '1/4';
+        else if (f === 0.75) fracStr = '3/4';
+        else if (f === 0.33) fracStr = '1/3';
+        else if (f === 0.67) fracStr = '2/3';
+        else fracStr = f.toString().substring(1); // במקרה של שבר לא מוכר, יציג .x
+        
+        if (whole === 0) return fracStr;
+        if (fracStr.includes('/')) return `${whole} ${fracStr}`;
+        return `${whole}${fracStr}`;
+      };
+
+      return formatNumber(scaledNum);
+    });
   };
 
   if (isLoading) {
@@ -224,7 +282,6 @@ export default function RecipePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
         </div>
 
-        {/* חצי דפדוף */}
         {allImages.length > 1 && (
            <div className="absolute inset-0 pointer-events-none z-20">
              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">
@@ -355,7 +412,6 @@ export default function RecipePage() {
           )}
         </div>
 
-        {/* גלריית התמונות */}
         {allImages.length > 1 && (
           <section>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -384,16 +440,38 @@ export default function RecipePage() {
 
         {/* Ingredients */}
         {recipe.ingredients && (
-          <section className="bg-amber-50/50 border border-amber-100 rounded-2xl p-6 shadow-sm transition-all">
-            <h2 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3 border-b border-amber-200 pb-2">
-              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center text-amber-800">
-                <BookOpen className="w-5 h-5" />
+          <section className="bg-amber-50/50 border border-amber-100 rounded-2xl p-5 sm:p-6 shadow-sm transition-all">
+            
+            {/* כותרת ומחשבון כמויות */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-200 pb-4 mb-5 gap-4">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center text-amber-800 shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                מרכיבים
+              </h2>
+              
+              {/* כפתורי הכפלת כמויות */}
+              <div className="flex items-center gap-1 bg-white/60 p-1.5 rounded-lg border border-amber-200 shadow-sm self-start">
+                 {[0.5, 1, 2, 3].map(scale => (
+                   <button 
+                     key={scale}
+                     onClick={() => setScaleFactor(scale)}
+                     className={`px-3 py-1.5 rounded-md text-sm font-bold transition-all ${scaleFactor === scale ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-800 hover:bg-amber-100'}`}
+                     title={scale === 1 ? 'כמות מקורית' : `הכפל פי ${scale}`}
+                   >
+                     {scale === 1 ? 'רגיל' : `x${scale}`}
+                   </button>
+                 ))}
               </div>
-              מרכיבים
-            </h2>
+            </div>
+
             <ul className="space-y-3">
               {recipe.ingredients.split("\n").filter(Boolean).map((line, i) => {
                 const isChecked = checkedIngredients.has(i);
+                // שליחה לפונקציית המכפיל אם המשתמש בחר להכפיל או לחלק
+                const scaledLine = scaleFactor === 1 ? line : scaleIngredient(line, scaleFactor);
+
                 return (
                   <li 
                     key={i} 
@@ -413,9 +491,9 @@ export default function RecipePage() {
                     )}
                     
                     <span className={`text-right leading-relaxed font-medium transition-all duration-200 ${
-                      isChecklistMode && isChecked ? 'text-gray-400 line-through' : 'text-gray-700'
+                      isChecklistMode && isChecked ? 'text-gray-400 line-through' : 'text-gray-800'
                     }`}>
-                      {line}
+                      {scaledLine}
                     </span>
                   </li>
                 );
@@ -427,7 +505,7 @@ export default function RecipePage() {
         {/* Method */}
         {recipe.method && (
           <section>
-            <h2 className="text-xl font-bold text-gray-800 mb-5 text-right border-b border-gray-100 pb-2 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-800 mb-5 text-right border-b border-gray-100 pb-2">
               אופן ההכנה
             </h2>
             <div className="space-y-4">
