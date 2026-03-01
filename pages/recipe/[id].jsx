@@ -17,8 +17,11 @@ import {
   BookOpen,
   StickyNote,
   X,
-  // Maximize2 נמחק מכאן כי הוא לא בשימוש יותר
-  Images
+  Maximize2,
+  Images,
+  ListChecks, // אייקון חדש למצב צ'קליסט
+  CheckCircle2, // אייקון וי מלא
+  Circle // אייקון עיגול ריק
 } from "lucide-react";
 
 export default function RecipePage() {
@@ -32,10 +35,14 @@ export default function RecipePage() {
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // --- סטייט למצב צ'קליסט (בישול) ---
+  const [isChecklistMode, setIsChecklistMode] = useState(false);
+  const [checkedIngredients, setCheckedIngredients] = useState(new Set());
+  const [checkedSteps, setCheckedSteps] = useState(new Set());
+
   const defaultImage = "/defualt_img.jpg";
   const oldUnsplashImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop";
 
-  // האזנה בזמן אמת לשינויים (כדי שאחרי עריכה זה יתעדכן מיד)
   useEffect(() => {
     if (!recipeId) return;
     setIsLoading(true);
@@ -95,6 +102,21 @@ export default function RecipePage() {
     return url;
   };
 
+  // --- פונקציות תיוג צ'קליסט ---
+  const toggleIngredient = (index) => {
+    const newSet = new Set(checkedIngredients);
+    if (newSet.has(index)) newSet.delete(index);
+    else newSet.add(index);
+    setCheckedIngredients(newSet);
+  };
+
+  const toggleStep = (index) => {
+    const newSet = new Set(checkedSteps);
+    if (newSet.has(index)) newSet.delete(index);
+    else newSet.add(index);
+    setCheckedSteps(newSet);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -119,7 +141,6 @@ export default function RecipePage() {
     );
   }
 
-  // איסוף חכם של כל התמונות 
   let allImages = [];
   if (recipe?.imageUrls && Array.isArray(recipe.imageUrls) && recipe.imageUrls.length > 0) {
     allImages = recipe.imageUrls;
@@ -130,7 +151,7 @@ export default function RecipePage() {
       allImages = [recipe.imageUrl];
     }
   }
-  allImages = allImages.filter(Boolean); // מנקה ערכים ריקים
+  allImages = allImages.filter(Boolean);
 
   const nextImage = (e) => {
     e.preventDefault();
@@ -156,7 +177,7 @@ export default function RecipePage() {
           onClick={() => setIsImageOpen(false)}
         >
           <button
-            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer z-[110]"
+            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/30 text-white rounded-full transition-colors cursor-pointer z-[110]"
             onClick={(e) => {
               e.stopPropagation();
               setIsImageOpen(false);
@@ -175,7 +196,6 @@ export default function RecipePage() {
                    <ChevronLeft className="w-8 h-8 sm:w-12 sm:h-12" />
                  </button>
               </div>
-              
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/90 text-sm font-medium bg-black/70 px-4 py-2 rounded-full z-[105]">
                 {currentImageIndex + 1} מתוך {allImages.length}
               </div>
@@ -194,10 +214,7 @@ export default function RecipePage() {
       {/* === הדר התמונה (הקרוסלה הראשית) === */}
       <div className="relative h-72 sm:h-96 group overflow-hidden bg-gray-100">
         
-        <div 
-          className="absolute inset-0 cursor-zoom-in z-10"
-          onClick={() => setIsImageOpen(true)}
-        >
+        <div className="absolute inset-0 cursor-zoom-in z-10" onClick={() => setIsImageOpen(true)}>
           <img
             src={allImages.length > 0 ? getDisplayImage(allImages[currentImageIndex]) : defaultImage}
             alt={recipe.name}
@@ -205,37 +222,23 @@ export default function RecipePage() {
             onError={(e) => (e.target.src = defaultImage)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-          
-          {/* האייקון Maximize2 נמחק מכאן כדי לא להסתיר את התמונה */}
         </div>
 
-        {/* חצי דפדוף (רק אם יש יותר מתמונה אחת) */}
+        {/* חצי דפדוף */}
         {allImages.length > 1 && (
            <div className="absolute inset-0 pointer-events-none z-20">
              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">
                 תמונה {currentImageIndex + 1} מתוך {allImages.length}
              </div>
-
-             <button 
-               onClick={prevImage} 
-               className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"
-             >
+             <button onClick={prevImage} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100">
                <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
              </button>
-             
-             <button 
-               onClick={nextImage} 
-               className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"
-             >
+             <button onClick={nextImage} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100">
                <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
              </button>
-             
              <div className="absolute bottom-28 left-0 right-0 flex justify-center gap-1.5">
                 {allImages.map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-amber-400 w-5' : 'bg-white/50 w-1.5'}`} 
-                  />
+                  <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-amber-400 w-5' : 'bg-white/50 w-1.5'}`} />
                 ))}
              </div>
            </div>
@@ -251,6 +254,15 @@ export default function RecipePage() {
           </button>
 
           <div className="flex gap-3 pointer-events-auto">
+            {/* כפתור מצב צ'קליסט */}
+            <button
+              onClick={() => setIsChecklistMode(!isChecklistMode)}
+              className={`${iconButtonClass} ${isChecklistMode ? 'text-amber-600 bg-amber-50 border-amber-200 ring-2 ring-amber-400/20' : 'text-gray-700'}`}
+              title="מצב צ'קליסט"
+            >
+              <ListChecks className="w-5 h-5" />
+            </button>
+
             <button
               onClick={handleShare}
               className={`${iconButtonClass} text-gray-700`}
@@ -273,11 +285,7 @@ export default function RecipePage() {
               className={`${iconButtonClass} text-red-500 hover:text-red-600 hover:bg-red-50`}
               title="מחק מתכון"
             >
-              {deleting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Trash2 className="w-5 h-5" />
-              )}
+              {deleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -310,15 +318,21 @@ export default function RecipePage() {
         </div>
       </div>
 
+      {/* === תוכן המתכון === */}
       <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
+
+        {/* בר התרעה כשמצב צ'קליסט דלוק */}
+        {isChecklistMode && (
+          <div className="bg-amber-100 text-amber-800 p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
+            <ListChecks className="w-5 h-5" />
+            מצב צ'קליסט פעיל - לחצי על שורות כדי לסמן אותן
+          </div>
+        )}
 
         {recipe.tags && recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 justify-start">
             {recipe.tags.map((tag, i) => (
-              <Badge
-                key={i}
-                className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 px-3 py-1 text-sm"
-              >
+              <Badge key={i} className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 px-3 py-1 text-sm">
                 {tag}
               </Badge>
             ))}
@@ -334,19 +348,14 @@ export default function RecipePage() {
         <div className="text-gray-500 text-sm border-b border-gray-100 pb-4">
           <p>
             נוסף בתאריך:{" "}
-            {recipe.created_date
-              ? new Date(recipe.created_date).toLocaleDateString("he-IL")
-              : "-"}
+            {recipe.created_date ? new Date(recipe.created_date).toLocaleDateString("he-IL") : "-"}
           </p>
-
           {recipe.createdBy && (
-            <p>
-              הועלה על ידי: <strong>{recipe.createdBy}</strong>
-            </p>
+            <p>הועלה על ידי: <strong>{recipe.createdBy}</strong></p>
           )}
         </div>
 
-        {/* גלריית התמונות למטה */}
+        {/* גלריית התמונות */}
         {allImages.length > 1 && (
           <section>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -373,8 +382,9 @@ export default function RecipePage() {
           </section>
         )}
 
+        {/* Ingredients */}
         {recipe.ingredients && (
-          <section className="bg-amber-50/50 border border-amber-100 rounded-2xl p-6 shadow-sm">
+          <section className="bg-amber-50/50 border border-amber-100 rounded-2xl p-6 shadow-sm transition-all">
             <h2 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3 border-b border-amber-200 pb-2">
               <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center text-amber-800">
                 <BookOpen className="w-5 h-5" />
@@ -382,44 +392,80 @@ export default function RecipePage() {
               מרכיבים
             </h2>
             <ul className="space-y-3">
-              {recipe.ingredients
-                .split("\n")
-                .filter(Boolean)
-                .map((line, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-gray-700 text-right leading-relaxed font-medium">
+              {recipe.ingredients.split("\n").filter(Boolean).map((line, i) => {
+                const isChecked = checkedIngredients.has(i);
+                return (
+                  <li 
+                    key={i} 
+                    onClick={() => isChecklistMode && toggleIngredient(i)}
+                    className={`flex items-start gap-3 transition-all duration-200 ${isChecklistMode ? 'cursor-pointer hover:bg-amber-100/50 p-2 -mx-2 rounded-lg' : ''}`}
+                  >
+                    {isChecklistMode ? (
+                      <div className="mt-1 flex-shrink-0 transition-transform active:scale-75">
+                        {isChecked ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-gray-300" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-2 h-2 bg-amber-400 rounded-full mt-2 flex-shrink-0" />
+                    )}
+                    
+                    <span className={`text-right leading-relaxed font-medium transition-all duration-200 ${
+                      isChecklistMode && isChecked ? 'text-gray-400 line-through' : 'text-gray-700'
+                    }`}>
                       {line}
                     </span>
                   </li>
-                ))}
+                );
+              })}
             </ul>
           </section>
         )}
 
+        {/* Method */}
         {recipe.method && (
           <section>
-            <h2 className="text-xl font-bold text-gray-800 mb-5 text-right border-b border-gray-100 pb-2">
+            <h2 className="text-xl font-bold text-gray-800 mb-5 text-right border-b border-gray-100 pb-2 flex items-center justify-between">
               אופן ההכנה
             </h2>
-            <div className="space-y-6">
-              {recipe.method
-                .split("\n")
-                .filter(Boolean)
-                .map((step, i) => (
-                  <div key={i} className="flex gap-4 group">
-                    <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
-                      {i + 1}
-                    </div>
-                    <p className="text-gray-700 pt-1 leading-relaxed text-right text-lg">
+            <div className="space-y-4">
+              {recipe.method.split("\n").filter(Boolean).map((step, i) => {
+                const isChecked = checkedSteps.has(i);
+                return (
+                  <div 
+                    key={i} 
+                    onClick={() => isChecklistMode && toggleStep(i)}
+                    className={`flex gap-4 group transition-all duration-200 ${isChecklistMode ? 'cursor-pointer hover:bg-gray-50 p-3 -mx-3 rounded-xl border border-transparent hover:border-gray-100' : ''} ${isChecked && isChecklistMode ? 'opacity-50' : ''}`}
+                  >
+                    {isChecklistMode ? (
+                      <div className="mt-1.5 flex-shrink-0 transition-transform active:scale-75">
+                        {isChecked ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-500" />
+                        ) : (
+                          <Circle className="w-6 h-6 text-gray-300" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                        {i + 1}
+                      </div>
+                    )}
+                    
+                    <p className={`text-gray-700 pt-1 leading-relaxed text-right text-lg transition-all duration-200 ${
+                      isChecklistMode && isChecked ? 'line-through' : ''
+                    }`}>
                       {step}
                     </p>
                   </div>
-                ))}
+                );
+              })}
             </div>
           </section>
         )}
 
+        {/* Notes */}
         {recipe.notes && (
           <section className="bg-yellow-50 border-r-4 border-yellow-400 rounded-lg p-5 mt-8 shadow-sm">
             <h2 className="text-lg font-bold text-yellow-800 mb-3 flex items-center gap-2">
