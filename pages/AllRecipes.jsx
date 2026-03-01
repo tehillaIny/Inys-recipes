@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { getRecipes, getTags, updateRecipe } from '@/firebaseService';
+import { getRecipes, getTags } from '@/firebaseService';
 import RecipeCard from '@/components/Recipes/RecipeCard';
 import SearchAndFilter from '@/components/Recipes/SearchAndFilter';
 import { Loader2 } from "lucide-react";
@@ -19,12 +19,14 @@ export default function AllRecipes() {
   const [selectedTags, setSelectedTags] = useState([]); 
   const [sortOrder, setSortOrder] = useState('newest');
 
+  // קריאת תגים מה-URL בטעינה ראשונית
   useEffect(() => {
     if (router.isReady && router.query.tag) {
       setSelectedTags([router.query.tag]);
     }
   }, [router.isReady, router.query.tag]);
 
+  // שליפת המידע מ-Firebase
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -47,6 +49,40 @@ export default function AllRecipes() {
     fetchData();
   }, []);
 
+  // 1. שמירת מיקום הגלילה ושחזורו
+  useEffect(() => {
+    // הפונקציה ששומרת את המיקום הנוכחי לפני שהמשתמש עוזב את העמוד
+    const handleRouteChangeStart = () => {
+      sessionStorage.setItem('scrollPosition', window.scrollY.toString());
+    };
+
+    // האזנה לאירוע שינוי ראוט (למשל, לחיצה על מתכון)
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+    };
+  }, [router]);
+
+  // שחזור מיקום הגלילה - מופעל רק כשהמתכונים סיימו להיטען והרנדור הושלם
+  useEffect(() => {
+    if (!loading && filteredRecipes.length > 0) {
+      const savedPosition = sessionStorage.getItem('scrollPosition');
+      if (savedPosition) {
+        // מתן השהייה קלה מאוד כדי לוודא שה-DOM סיים להסתדר
+        setTimeout(() => {
+          window.scrollTo({
+            top: parseInt(savedPosition, 10),
+            behavior: 'instant' // ללא אנימציית גלילה, מעבר מיידי
+          });
+          // ניקוי המיקום אחרי השחזור כדי לא לגלוש שוב בטעות בריענון עמוד רגיל
+          sessionStorage.removeItem('scrollPosition');
+        }, 50); 
+      }
+    }
+  }, [loading, filteredRecipes.length]); // התלות החשובה: מופעל כשהטעינה מסתיימת ויש מתכונים
+
+  // סינון ומיון
   useEffect(() => {
     let result = [...recipes];
 
@@ -95,7 +131,6 @@ export default function AllRecipes() {
         <div className="max-w-lg mx-auto px-4 py-6">
           <div className="flex items-center justify-start gap-4 mb-4">
             
-            {/* הלוגו */}
             <div className="w-20 h-20 relative flex-shrink-0 drop-shadow-md">
               <img 
                 src="/logo.png" 
@@ -140,7 +175,6 @@ export default function AllRecipes() {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedTags([]);
-                  // ניקוי גם של ה-URL
                   router.push('/AllRecipes', undefined, { shallow: true });
                 }}
                 className="mt-2 text-amber-600 hover:underline text-sm"
