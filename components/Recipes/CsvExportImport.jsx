@@ -21,16 +21,23 @@ export default function CsvExportImport({ onImportSuccess }) {
     try {
       const recipes = await getRecipes();
       
-      const csvData = recipes.map(r => ({
-        name: r.name,
-        description: r.description,
-        tags: Array.isArray(r.tags) ? r.tags.join(';') : r.tags,
-        Ingredients: r.ingredients,
-        instructions: r.method,
-        notes: r.notes || '',
-        pic_link: r.imageUrl,
-        source_link: r.sourceUrl
-      }));
+      const csvData = recipes.map(r => {
+        // המרה של מערך תמונות למחרוזת מופרדת בפסיקים לצורך הייצוא
+        const imagesStr = r.imageUrls && r.imageUrls.length > 0 
+          ? r.imageUrls.join(',') 
+          : (r.imageUrl || '');
+
+        return {
+          name: r.name,
+          description: r.description,
+          tags: Array.isArray(r.tags) ? r.tags.join(';') : r.tags,
+          Ingredients: r.ingredients,
+          instructions: r.method,
+          notes: r.notes || '',
+          pic_link: imagesStr, // שימוש במחרוזת התמונות החדשה
+          source_link: r.sourceUrl
+        };
+      });
 
       const csvString = Papa.unparse(csvData);
       
@@ -53,7 +60,6 @@ export default function CsvExportImport({ onImportSuccess }) {
     }
   };
 
-  // --- לוגיקת בחירת קבצים ---
   const handleCsvSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedCsv(e.target.files[0]);
@@ -96,18 +102,28 @@ export default function CsvExportImport({ onImportSuccess }) {
           setProgress(`מעבד מתכון ${i + 1} מתוך ${recipes.length}: ${row.name || 'ללא שם'}`);
 
           try {
-            let finalImageUrl = '';
+            let finalImageUrls = [];
+            let mainImageUrl = '';
 
+            // טיפול חכם במספר תמונות מופרדות בפסיק או נקודה-פסיק
             if (row.pic_link && row.pic_link.trim() !== '') {
-              const originalPath = row.pic_link;
-              const filename = originalPath.split(/[/\\]/).pop();
+              const rawLinks = row.pic_link.split(/[,;]/).map(l => l.trim()).filter(Boolean);
 
-              const matchingFile = selectedImages.find(file => file.name === filename);
+              for (const link of rawLinks) {
+                const filename = link.split(/[/\\]/).pop();
+                const matchingFile = selectedImages.find(file => file.name === filename);
 
-              if (matchingFile) {
-                finalImageUrl = await uploadImage(matchingFile);
-              } else if (row.pic_link.startsWith('http')) {
-                 finalImageUrl = row.pic_link;
+                if (matchingFile) {
+                  const uploadedUrl = await uploadImage(matchingFile);
+                  finalImageUrls.push(uploadedUrl);
+                } else if (link.startsWith('http')) {
+                  finalImageUrls.push(link);
+                }
+              }
+
+              // שמירת התמונה הראשונה לטובת התאימות לאחור
+              if (finalImageUrls.length > 0) {
+                mainImageUrl = finalImageUrls[0];
               }
             }
 
@@ -119,7 +135,8 @@ export default function CsvExportImport({ onImportSuccess }) {
               ingredients: row.Ingredients || '',
               method: row.instructions || '',
               notes: row.notes || '',
-              imageUrl: finalImageUrl,
+              imageUrl: mainImageUrl, // התמונה הראשית
+              imageUrls: finalImageUrls, // מערך כל התמונות!
               sourceUrl: row.source_link || '',
               tags: tagsList,
               createdAt: new Date()
@@ -156,7 +173,7 @@ export default function CsvExportImport({ onImportSuccess }) {
 
   return (
     <>
-<div className="flex gap-2 mb-4 justify-start">
+      <div className="flex gap-2 mb-4 justify-start">
         <button
           onClick={() => setShowImportModal(true)}
           className="bg-white border border-gray-200 text-gray-600 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors shadow-sm text-xs font-medium"
@@ -192,7 +209,8 @@ export default function CsvExportImport({ onImportSuccess }) {
 
             <div className="p-5 space-y-5">
               <p className="text-sm text-gray-500 mb-2">
-                כדי לייבא מתכונים עם תמונות, בחרי את קובץ ה-CSV ואת תיקיית התמונות. המערכת תחבר ביניהם אוטומטית.
+                כדי לייבא מתכונים עם תמונות, בחרי את קובץ ה-CSV ואת תיקיית התמונות. 
+                (באקסל, ניתן להפריד כמה תמונות בעזרת פסיק. למשל: img1.jpg, img2.jpg)
               </p>
 
               <div className={`p-3 rounded-xl border-2 transition-colors ${selectedCsv ? 'border-green-100 bg-green-50' : 'border-gray-100 bg-gray-50'}`}>

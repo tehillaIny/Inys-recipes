@@ -8,13 +8,12 @@ import { Loader2, ChevronRight } from "lucide-react";
 
 export default function EditRecipe() {
   const router = useRouter();
-  const { id } = router.query; // קבלת ה-ID מהכתובת
+  const { id } = router.query; 
   
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // טעינת המתכון הקיים
   useEffect(() => {
     if (!id) return;
 
@@ -39,22 +38,21 @@ export default function EditRecipe() {
     fetchRecipe();
   }, [id, router]);
 
-  // שמירת השינויים
   const handleSave = async (formData) => {
     setSaving(true);
     try {
-      // 1. הוספת תגיות חדשות אם יש
       if (formData.tags && formData.tags.length > 0) {
         for (const tag of formData.tags) {
           await addTag(tag);
         }
       }
 
-      // 2. עדכון המתכון
       await updateRecipe(id, formData);
       
-      // 3. חזרה לדף המתכון
-      router.push(`/recipe/${id}`);
+      // התיקון לבעיית הלחיצה הכפולה על "חזור"! 
+      // במקום לדחוף שוב את עמוד המתכון ולהעמיס על ההיסטוריה, פשוט חוזרים צעד אחד אחורה.
+      router.back();
+      
     } catch (error) {
       console.error("Failed to update recipe:", error);
       alert("שגיאה בעדכון המתכון");
@@ -75,7 +73,6 @@ export default function EditRecipe() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 h-16 flex items-center gap-3">
           <button
@@ -88,7 +85,6 @@ export default function EditRecipe() {
         </div>
       </header>
 
-      {/* Form */}
       <main className="max-w-lg mx-auto p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <RecipeForm

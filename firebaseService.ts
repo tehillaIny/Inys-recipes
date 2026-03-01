@@ -1,7 +1,6 @@
 import { db } from "./firebase";
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
-
 const CLOUDINARY_CLOUD_NAME = "dysrx5oeu";
 const CLOUDINARY_UPLOAD_PRESET = "inys_recipes";
 
@@ -52,7 +51,7 @@ export async function getRecipes() {
 
 // ---------------------- TAGS ----------------------
 
-// הבאת כל התגיות (עם סינון כפילויות)
+// הבאת כל התגיות (עם סינון כפילויות ומיון אלפביתי)
 export async function getTags(): Promise<Tag[]> {
   try {
     const tagsRef = collection(db, "tags");
@@ -67,6 +66,9 @@ export async function getTags(): Promise<Tag[]> {
     const uniqueTags = rawTags.filter((tag, index, self) =>
       index === self.findIndex((t) => t.name === tag.name)
     );
+
+    // הוספת המיון האלפביתי - עובד מצוין עם עברית
+    uniqueTags.sort((a, b) => a.name.localeCompare(b.name, 'he'));
 
     return uniqueTags;
   } catch (err) {
@@ -140,15 +142,13 @@ export async function uploadImage(file: File): Promise<string> {
   }
 }
 
-// פונקציית סנכרון תגיות - עוברת על כל המתכונים ומוודאה שהתגיות שלהם קיימות ברשימה הראשית
+// פונקציית סנכרון תגיות
 export async function syncMissingTags() {
   console.log("מתחיל סנכרון תגיות...");
   try {
-    // 1. שליפת כל המתכונים
     const recipesRef = collection(db, "recipes");
     const recipesSnapshot = await getDocs(recipesRef);
     
-    // 2. איסוף כל שמות התגיות מכל המתכונים
     const allTagsSet = new Set<string>();
     recipesSnapshot.docs.forEach(doc => {
       const data = doc.data();
@@ -161,10 +161,9 @@ export async function syncMissingTags() {
 
     console.log(`נמצאו ${allTagsSet.size} תגיות ייחודיות במתכונים.`);
 
-    // 3. הוספה של כל תגית (הפונקציה addTag שלנו כבר בודקת כפילויות, אז זה בטוח)
     let addedCount = 0;
     for (const tagName of Array.from(allTagsSet)) {
-      await addTag(tagName); // הפונקציה הקיימת שלך שבודקת לפני הוספה
+      await addTag(tagName); 
       addedCount++;
     }
 
