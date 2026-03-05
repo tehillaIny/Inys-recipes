@@ -1,92 +1,61 @@
 import React from 'react';
-import { Clock, Images } from "lucide-react"; // ייבאנו את Images מה-Lucide
-import Link from "next/link";
-import { format } from "date-fns";
-import { deleteRecipe } from "@/firebaseService";
+import { useRouter } from 'next/router';
+import { getCategoryInfo } from '@/utils/categoryHelper';
 
 export default function RecipeCard({ recipe }) {
-  const defaultImage = "/defualt_img.jpg";
+  const router = useRouter();
+  
+  let imageUrl = '/defualt_img.jpg';
+  if (recipe.imageUrls && recipe.imageUrls.length > 0) {
+    imageUrl = recipe.imageUrls[0];
+  } else if (recipe.imageUrl) {
+    imageUrl = recipe.imageUrl.split(',')[0].trim();
+  }
 
-  const handleDelete = async (e) => {
-    e.preventDefault(); 
-    if (confirm("האם את בטוחה שברצונך למחוק את המתכון?")) {
-      await deleteRecipe(recipe.id);
-      window.location.reload(); 
-    }
+  // פונקציית דחיסת תמונות לטעינה מהירה
+  const optimizeImage = (url, width) => {
+    if (!url || !url.includes('cloudinary.com') || url.includes('/upload/c_')) return url;
+    return url.replace('/upload/', `/upload/c_fill,w_${width},q_auto,f_auto/`);
   };
 
-  const displayImage = recipe.imageUrls?.length > 0 
-    ? recipe.imageUrls[0] 
-    : (recipe.imageUrl || defaultImage);
-
   return (
-    <Link href={`/recipe/${recipe.id}`} className="block">
-      <div className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white border-0 shadow-md rounded-xl h-full flex flex-col">
-        {/* IMAGE */}
-        <div className="relative h-48 overflow-hidden rounded-t-xl shrink-0">
-          
-          {/* תגית שמציגה כמה תמונות יש (אם יש יותר מ-1) */}
-          {recipe.imageUrls?.length > 1 && (
-            <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-[11px] font-bold px-2 py-1 rounded-md flex items-center gap-1.5 z-10 shadow-sm">
-              <Images className="w-3.5 h-3.5 text-amber-400" />
-              {recipe.imageUrls.length}
-            </div>
-          )}
-
-          <img
-            src={displayImage}
-            alt={recipe.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => (e.currentTarget.src = defaultImage)}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-3 right-3 left-3 text-right">
-            <h3 className="text-white font-bold text-lg leading-tight line-clamp-2 drop-shadow-lg">
-              {recipe.name}
-            </h3>
-          </div>
-        </div>
-
-        {/* CONTENT */}
-        <div className="p-4 flex flex-col flex-1 text-right">
-          {recipe.description && (
-            <p className="text-gray-600 text-sm line-clamp-2 mb-3 text-right">
-              {recipe.description}
-            </p>
-          )}
-
-          {/* תגיות */}
-          <div className="flex flex-wrap gap-1.5 mb-3 justify-start">
-            {recipe.tags?.slice(0, 3).map((tag, i) => (
-              <span
-                key={i}
-                className="bg-amber-50 text-amber-700 px-2 py-1 rounded text-xs font-medium"
-              >
+    <div 
+      onClick={() => router.push(`/recipe/${recipe.id}`)}
+      className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all group flex flex-col h-full active:scale-[0.98]"
+    >
+      <div className="relative h-32 sm:h-40 w-full overflow-hidden bg-gray-50">
+        <img 
+          src={optimizeImage(imageUrl, 400)} 
+          alt={recipe.name} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => { e.target.src = '/defualt_img.jpg'; }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+      
+      <div className="p-3.5 sm:p-4 flex flex-col flex-1">
+        <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-3 line-clamp-2">
+          {recipe.name}
+        </h3>
+        
+        {/* תגיות צבעוניות עם אייקונים */}
+        <div className="mt-auto flex flex-wrap gap-1.5">
+          {recipe.tags?.slice(0, 3).map((tag, i) => {
+            const { Icon, badge } = getCategoryInfo(tag);
+            return (
+              <span key={i} className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold border ${badge}`}>
+                <Icon className="w-3 h-3" />
                 {tag}
               </span>
-            ))}
-            {recipe.tags?.length > 3 && (
-              <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-xs">
-                +{recipe.tags.length - 3}
-              </span>
-            )}
-          </div>
-
-          {/* תחתית הכרטיס - תאריך ויוצר */}
-          <div className="mt-auto pt-3 border-t border-gray-50 text-xs text-gray-400 flex justify-between items-center">
-            <span>
-              {recipe.created_date 
-                ? new Date(recipe.created_date).toLocaleDateString('he-IL') 
-                : ''}
+            );
+          })}
+          {recipe.tags?.length > 3 && (
+            <span className="flex items-center px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold bg-gray-50 text-gray-500 border border-gray-200">
+              +{recipe.tags.length - 3}
             </span>
-            {recipe.createdBy && (
-              <span className="font-medium text-gray-500">
-                מאת: {recipe.createdBy}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

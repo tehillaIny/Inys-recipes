@@ -5,6 +5,7 @@ import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/Badge";
 import { processIngredientLine } from '@/utils/recipeConversions';
+import { getCategoryInfo } from '@/utils/categoryHelper';
 
 import {
   ChevronRight,
@@ -269,8 +270,18 @@ export default function RecipePage() {
         )}
 
         {recipe.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-start">{recipe.tags.map((tag, i) => (<Badge key={i} className="bg-amber-100 text-amber-800 border-amber-200 px-3 py-1 text-sm">{tag}</Badge>))}</div>
-        )}
+          <div className="flex flex-wrap gap-2 justify-start">
+            {recipe.tags.map((tag, i) => {
+              const { Icon, badge } = getCategoryInfo(tag);
+              return (
+              <span key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-bold border shadow-sm ${badge}`}>
+                <Icon className="w-4 h-4" />
+                {tag}
+                </span>
+                );
+                })}
+                </div>
+              )}
 
         {recipe.description && (<div className="text-gray-600 text-lg leading-relaxed text-right">{recipe.description}</div>)}
 

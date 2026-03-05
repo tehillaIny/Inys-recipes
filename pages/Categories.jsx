@@ -1,96 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { getTags } from '@/firebaseService';
-import { 
-  ChevronRight, 
-  Loader2, 
-  Search, 
-  Flame, 
-  Droplet, 
-  Wheat, 
-  Leaf, 
-  Utensils, 
-  ChefHat
-} from "lucide-react";
+import { getTags, addTag, deleteTag } from '@/firebaseService';
+import { ChevronRight, Loader2, Search, Settings2, Trash2, Plus } from "lucide-react";
+import { getCategoryInfo } from '@/utils/categoryHelper';
 
 export default function Categories() {
   const router = useRouter();
   const [tags, setTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
 
-  useEffect(() => {
-    async function loadTags() {
-      const data = await getTags();
-      setTags(data);
-      setLoading(false);
-    }
-    loadTags();
-  }, []);
-
-  // מנגנון חכם שמצמיד אייקון וצבע רקע לכל קטגוריה לפי המילה שלה
-  const getCategoryStyle = (tagName) => {
-    const t = tagName.toLowerCase();
-    
-    if (t.includes('בשר') || t.includes('עוף') || t.includes('שניצל') || t.includes('דג')) 
-      return { icon: <Flame className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-red-50 to-red-100 border-red-200 text-red-800' };
-    
-    if (t.includes('חלבי') || t.includes('גבינ') || t.includes('חלב')) 
-      return { icon: <Droplet className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-blue-50 to-cyan-100 border-blue-200 text-blue-800' };
-    
-    if (t.includes('עוג') || t.includes('קינוח') || t.includes('מתוק')) 
-      return { icon: <ChefHat className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-pink-50 to-rose-100 border-pink-200 text-pink-800' };
-    
-    if (t.includes('סלט') || t.includes('בריא') || t.includes('טבעוני') || t.includes('ירק')) 
-      return { icon: <Leaf className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 text-green-800' };
-    
-    if (t.includes('לחם') || t.includes('מאפ') || t.includes('בצק') || t.includes('פיצה')) 
-      return { icon: <Wheat className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-200 text-amber-800' };
-
-    // עיצוב ברירת מחדל
-    return { icon: <Utensils className="w-8 h-8 opacity-80" />, color: 'bg-gradient-to-br from-gray-50 to-slate-100 border-gray-200 text-gray-700' };
+  const loadTags = async () => {
+    setLoading(true);
+    const data = await getTags();
+    setTags(data);
+    setLoading(false);
   };
 
-  const filteredTags = tags.filter(tag => 
-    tag.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => { loadTags(); }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
-        <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
-      </div>
-    );
-  }
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategory.trim()) return;
+    try {
+      await addTag(newCategory.trim());
+      setNewCategory("");
+      loadTags();
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteCategory = async (e, tagId) => {
+    e.stopPropagation();
+    if(window.confirm('האם את בטוחה שברצונך למחוק את הקטגוריה הזו?')) {
+       await deleteTag(tagId);
+       loadTags();
+    }
+  };
+
+  const filteredTags = tags.filter(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]"><Loader2 className="w-10 h-10 text-amber-500 animate-spin" /></div>;
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
-      
-      {/* הדר כמו בעמוד הראשי */}
       <header className="bg-white/90 backdrop-blur-lg sticky top-0 z-40 border-b border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] pt-6 pb-4">
         <div className="max-w-lg mx-auto px-5">
-          <div className="flex items-center gap-3 mb-5">
-            <button 
-              onClick={() => router.back()}
-              className="p-2 -mr-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors text-gray-600"
-            >
-              <ChevronRight className="w-6 h-6" />
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <button onClick={() => router.back()} className="p-2 -mr-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors text-gray-600"><ChevronRight className="w-6 h-6" /></button>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">קטגוריות</h1>
+            </div>
+            <button onClick={() => setIsEditing(!isEditing)} className={`p-2 rounded-full transition-colors ${isEditing ? 'bg-amber-100 text-amber-700' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
+              <Settings2 className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-              חיפוש לפי קטגוריות
-            </h1>
           </div>
 
-          {/* שורת חיפוש פנימית לקטגוריות */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="איזו קטגוריה בא לך?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full py-3.5 pl-12 pr-5 bg-gray-50 border border-gray-100 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white text-sm font-medium placeholder:text-gray-400 transition-all text-right"
-            />
+            <input type="text" placeholder="חיפוש קטגוריה..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full py-3.5 pl-12 pr-5 bg-gray-50 border border-gray-100 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white text-sm font-medium transition-all text-right" />
           </div>
         </div>
       </header>
@@ -99,21 +68,17 @@ export default function Categories() {
         {filteredTags.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
             {filteredTags.map(tag => {
-              const style = getCategoryStyle(tag.name);
+              const { Icon, card } = getCategoryInfo(tag.name);
               return (
-                <div
-                  key={tag.id}
-                  onClick={() => router.push(`/AllRecipes?tag=${encodeURIComponent(tag.name)}`)}
-                  className={`relative overflow-hidden cursor-pointer group rounded-3xl p-5 border ${style.color} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
-                >
-                  <div className="absolute -left-4 -top-4 opacity-10 transform -rotate-12 group-hover:scale-110 group-hover:rotate-0 transition-transform duration-500">
-                    <div className="w-24 h-24">{style.icon}</div>
-                  </div>
-                  
+                <div key={tag.id} onClick={() => !isEditing && router.push(`/AllRecipes?tag=${encodeURIComponent(tag.name)}`)} className={`relative overflow-hidden group rounded-3xl p-5 border ${card} shadow-sm transition-all duration-300 ${!isEditing ? 'cursor-pointer hover:shadow-md hover:-translate-y-1' : ''}`}>
+                  {isEditing && (
+                    <button onClick={(e) => handleDeleteCategory(e, tag.id)} className="absolute top-2 left-2 p-2 bg-white/80 hover:bg-red-50 text-red-500 rounded-full shadow-sm transition-colors z-20">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div className="absolute -left-4 -top-4 opacity-10 transform -rotate-12 group-hover:scale-110 transition-transform duration-500"><Icon className="w-24 h-24" /></div>
                   <div className="flex flex-col items-center text-center gap-3 relative z-10 mt-2">
-                    <div className="p-3 bg-white/50 backdrop-blur-sm rounded-2xl shadow-sm">
-                      {style.icon}
-                    </div>
+                    <div className="p-3 bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm"><Icon className="w-8 h-8 opacity-80" /></div>
                     <span className="font-bold text-lg">{tag.name}</span>
                   </div>
                 </div>
@@ -121,13 +86,14 @@ export default function Categories() {
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">לא נמצאו קטגוריות</h3>
-            <p className="text-gray-500 text-sm">נסי לחפש מילה אחרת</p>
-          </div>
+          <div className="flex flex-col items-center justify-center py-10 text-center"><Search className="w-8 h-8 text-gray-300 mb-2" /><p className="text-gray-500">לא נמצאו קטגוריות</p></div>
+        )}
+
+        {isEditing && (
+          <form onSubmit={handleAddCategory} className="mt-8 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-2">
+            <input type="text" placeholder="שם קטגוריה חדשה..." value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="flex-1 bg-gray-50 px-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-amber-400 border border-transparent" />
+            <button type="submit" disabled={!newCategory.trim()} className="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white p-3 rounded-2xl transition-colors"><Plus className="w-6 h-6" /></button>
+          </form>
         )}
       </main>
     </div>
