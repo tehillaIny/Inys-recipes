@@ -22,7 +22,6 @@ export default function CsvExportImport({ onImportSuccess }) {
       const recipes = await getRecipes();
       
       const csvData = recipes.map(r => {
-        // המרה של מערך תמונות למחרוזת מופרדת בפסיקים לצורך הייצוא
         const imagesStr = r.imageUrls && r.imageUrls.length > 0 
           ? r.imageUrls.join(',') 
           : (r.imageUrl || '');
@@ -34,7 +33,7 @@ export default function CsvExportImport({ onImportSuccess }) {
           Ingredients: r.ingredients,
           instructions: r.method,
           notes: r.notes || '',
-          pic_link: imagesStr, // שימוש במחרוזת התמונות החדשה
+          pic_link: imagesStr,
           source_link: r.sourceUrl
         };
       });
@@ -105,7 +104,6 @@ export default function CsvExportImport({ onImportSuccess }) {
             let finalImageUrls = [];
             let mainImageUrl = '';
 
-            // טיפול חכם במספר תמונות מופרדות בפסיק או נקודה-פסיק
             if (row.pic_link && row.pic_link.trim() !== '') {
               const rawLinks = row.pic_link.split(/[,;]/).map(l => l.trim()).filter(Boolean);
 
@@ -121,7 +119,6 @@ export default function CsvExportImport({ onImportSuccess }) {
                 }
               }
 
-              // שמירת התמונה הראשונה לטובת התאימות לאחור
               if (finalImageUrls.length > 0) {
                 mainImageUrl = finalImageUrls[0];
               }
@@ -136,7 +133,7 @@ export default function CsvExportImport({ onImportSuccess }) {
               method: row.instructions || '',
               notes: row.notes || '',
               imageUrl: mainImageUrl, // התמונה הראשית
-              imageUrls: finalImageUrls, // מערך כל התמונות!
+              imageUrls: finalImageUrls, // מערך כל התמונות
               sourceUrl: row.source_link || '',
               tags: tagsList,
               createdAt: new Date()

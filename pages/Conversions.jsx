@@ -15,7 +15,6 @@ import {
 export default function Conversions() {
   const router = useRouter();
 
-  // סידור הנתונים למבנה חכם שקל לרנדר
   const conversionData = [
     {
       title: "חומרי בסיס (לפי 1 כוס / כף)",

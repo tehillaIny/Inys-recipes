@@ -13,52 +13,19 @@ export default function ImportFromUrl({ onImport, onCancel }) {
     setLoading(true);
     setError('');
 
-    /*try {
-      const res = await fetch('https://inys-recipes.vercel.app/api/scrape', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-});
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Scraping failed');
-
-      // מחזיר לטופס העריכה
-      onImport({
-        name: data.name || '',
-        description: '', // אפשר להשאיר ריק אם אין
-        ingredients: (data.ingredients || []).join('\n'),
-        method: (data.method || []).join('\n'),
-        imageUrl: data.imageUrl || '',
-        sourceUrl: url
-      });
-
-    } catch (err) {
-      console.error(err);
-            alert("ERROR DETAILS: " + err.message); 
-      setError('לא הצלחנו לחלץ את המתכון מהקישור.');
-    } finally {
-      setLoading(false);
-    }
-  };*/
-
   try {
       const response = await CapacitorHttp.post({
         url: 'https://inys-recipes.vercel.app/api/scrape',
         headers: { 'Content-Type': 'application/json' },
-        data: { url: url } // שמים לב: כאן זה data ולא body
+        data: { url: url }
       });
 
-      // בדיקה אם השרת החזיר תשובה תקינה (200)
       if (response.status !== 200) {
           throw new Error(response.data.error || 'Scraping failed with status ' + response.status);
       }
 
-      // ב-CapacitorHttp, המידע כבר מגיע מפורק בתוך .data
       const data = response.data;
 
-      // מחזיר לטופס העריכה
       onImport({
         name: data.name || '',
         description: '', 

@@ -79,7 +79,6 @@ export default function RecipePage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
 
-      {/* השעון שלנו הופעל כקומפוננטה חיצונית נפרדת */}
       {timerConfig.active && (
         <FloatingTimer 
           initialSeconds={timerConfig.seconds} 
@@ -105,7 +104,6 @@ export default function RecipePage() {
         </div>
       )}
 
-      {/* תצוגת ההדר העליונה */}
       <div className="relative h-72 sm:h-96 group overflow-hidden bg-gray-100">
         <div className="absolute inset-0 cursor-zoom-in z-10" onClick={() => setIsImageOpen(true)}>
           <img src={allImages.length > 0 ? optimizeImage(getDisplayImage(allImages[currentImageIndex]), 800, 600) : getDisplayImage()} alt={recipe.name} className="w-full h-full object-cover transition-transform duration-500" onError={(e) => (e.target.src = getDisplayImage())} />
@@ -182,13 +180,11 @@ export default function RecipePage() {
           </section>
         )}
 
-        {/* קריאה חכמה ונקייה לרכיב המצרכים! */}
         <IngredientsList 
           ingredients={recipe.ingredients} 
           isChecklistMode={isChecklistMode} 
         />
 
-        {/* קריאה חכמה ונקייה לרכיב אופן ההכנה! */}
         <MethodSteps 
           method={recipe.method} 
           isChecklistMode={isChecklistMode} 

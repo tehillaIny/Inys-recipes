@@ -38,7 +38,6 @@ export default function RecipeCard({ recipe }) {
           {recipe.name}
         </h3>
         
-        {/* תגיות צבעוניות עם אייקונים */}
         <div className="mt-auto flex flex-wrap gap-1.5">
           {recipe.tags?.slice(0, 3).map((tag, i) => {
             const { Icon, badge } = getCategoryInfo(tag);

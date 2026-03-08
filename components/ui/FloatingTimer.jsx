@@ -5,7 +5,7 @@ export default function FloatingTimer({ initialSeconds, label, onClose }) {
   const [seconds, setSeconds] = useState(initialSeconds);
   const [isPaused, setIsPaused] = useState(false);
 
-  // מאפס את הטיימר אם המשתמש לחץ על כפתור זמנים אחר
+  //איפוס הטיימר
   useEffect(() => {
     setSeconds(initialSeconds);
     setIsPaused(false);

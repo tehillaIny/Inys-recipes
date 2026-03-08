@@ -1,10 +1,9 @@
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 
-// פונקציית עזר לטיפול ב-CORS (אישור גישה לאפליקציה)
 const allowCors = (fn) => async (req, res) => {
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); // מאפשר גישה מכולם (כולל האפליקציה)
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -17,11 +16,7 @@ const allowCors = (fn) => async (req, res) => {
   return await fn(req, res);
 };
 
-/*const handler = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).end();*/
-
   const handler = async (req, res) => {
-  // בדיקה חכמה יותר: המרה לאותיות גדולות וקבלת מידע על השגיאה
   const method = req.method ? req.method.toUpperCase() : 'UNKNOWN';
 
   if (method !== 'POST') {
@@ -50,8 +45,6 @@ const allowCors = (fn) => async (req, res) => {
       method: [],
       imageUrl: ''
     };
-
-    // --- (כאן נכנס כל הקוד הלוגי שלך לניתוח המתכון, העתקתי אותו למטה בשבילך) ---
     
     // 1. JSON-LD
     $('script[type="application/ld+json"]').each((_, el) => {
@@ -112,9 +105,6 @@ const allowCors = (fn) => async (req, res) => {
 
 export default allowCors(handler);
 
-// ---------------------------------------------------------
-// פונקציות עזר משודרגות
-// ---------------------------------------------------------
 
 function scrapeByHeaderText($, startRegex, stopRegex) {
   let items = [];
@@ -147,7 +137,6 @@ function scrapeByHeaderText($, startRegex, stopRegex) {
         items.push(...listItems);
       } 
       else if (next.is('div, p, section')) {
-        // בדיקת ילדים חכמה
         const childParagraphs = next.find('p');
         if (childParagraphs.length > 0) {
             childParagraphs.each((_, p) => {
@@ -155,7 +144,6 @@ function scrapeByHeaderText($, startRegex, stopRegex) {
                 if (isValidLine(pText, startRegex, stopRegex)) items.push(pText);
             });
         } else {
-            // ניסיון פיצול אוטומטי
             const htmlContent = next.html();
             if (htmlContent) {
                const hasBr = /<br\s*\/?>/i.test(htmlContent);
@@ -196,11 +184,9 @@ function scrapeList($, selectors, removeHeaderRegex) {
     if (elements.length > 0) {
       let list = [];
       
-      // הלוגיקה החדשה: לא בודקים שמות מחלקות, אלא את התוכן
       elements.each((_, el) => {
           const html = $(el).html() || '';
           
-          // בדיקה אם האלמנט מכיל ירידות שורה
           const hasBr = /<br\s*\/?>/i.test(html);
           
           if (hasBr) {
@@ -212,7 +198,6 @@ function scrapeList($, selectors, removeHeaderRegex) {
                   }
               });
           } else {
-              // חילוץ רגיל
               const clone = $(el).clone();
               clone.find('input, .checkbox, script, style, .ad').remove();
               const txt = cleanText(clone.text());

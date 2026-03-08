@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { App as CapacitorApp } from '@capacitor/app'; 
 import "../styles/globals.css";
 import Layout from "../Layout";
 
 function MyApp({ Component, pageProps }) {
+  const router = useRouter();
   
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -20,6 +23,24 @@ function MyApp({ Component, pageProps }) {
     }
   }, []);
 
+  useEffect(() => {
+    const handleBackButton = async () => {
+      await CapacitorApp.addListener('backButton', () => {
+        if (router.pathname === '/' || router.pathname === '/AllRecipes') {
+          CapacitorApp.exitApp();
+        } else {
+          router.back();
+        }
+      });
+    };
+
+    handleBackButton();
+
+    return () => {
+      CapacitorApp.removeAllListeners('backButton');
+    };
+  }, [router]);
+
   return (
     <Layout>
       <Head>
@@ -28,7 +49,6 @@ function MyApp({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#f59e0b" />
         
-        {/* חיבור למניפסט שיצרנו */}
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/logo.png" />
       </Head>

@@ -49,8 +49,6 @@ export default function EditRecipe() {
 
       await updateRecipe(id, formData);
       
-      // התיקון לבעיית הלחיצה הכפולה על "חזור"! 
-      // במקום לדחוף שוב את עמוד המתכון ולהעמיס על ההיסטוריה, פשוט חוזרים צעד אחד אחורה.
       router.back();
       
     } catch (error) {

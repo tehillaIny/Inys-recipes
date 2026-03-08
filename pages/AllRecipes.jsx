@@ -20,14 +20,12 @@ export default function AllRecipes() {
   const [selectedTags, setSelectedTags] = useState([]); 
   const [sortOrder, setSortOrder] = useState('newest');
 
-  // קריאת תגים מה-URL בטעינה ראשונית
   useEffect(() => {
     if (router.isReady && router.query.tag) {
       setSelectedTags([router.query.tag]);
     }
   }, [router.isReady, router.query.tag]);
 
-  // שליפת המידע מ-Firebase
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -50,14 +48,11 @@ export default function AllRecipes() {
     fetchData();
   }, []);
 
-  // 1. שמירת מיקום הגלילה ושחזורו
   useEffect(() => {
-    // הפונקציה ששומרת את המיקום הנוכחי לפני שהמשתמש עוזב את העמוד
     const handleRouteChangeStart = () => {
       sessionStorage.setItem('scrollPosition', window.scrollY.toString());
     };
 
-    // האזנה לאירוע שינוי ראוט (למשל, לחיצה על מתכון)
     router.events.on('routeChangeStart', handleRouteChangeStart);
 
     return () => {
@@ -65,25 +60,21 @@ export default function AllRecipes() {
     };
   }, [router]);
 
-  // שחזור מיקום הגלילה - מופעל רק כשהמתכונים סיימו להיטען והרנדור הושלם
   useEffect(() => {
     if (!loading && filteredRecipes.length > 0) {
       const savedPosition = sessionStorage.getItem('scrollPosition');
       if (savedPosition) {
-        // מתן השהייה קלה מאוד כדי לוודא שה-DOM סיים להסתדר
         setTimeout(() => {
           window.scrollTo({
             top: parseInt(savedPosition, 10),
-            behavior: 'instant' // ללא אנימציית גלילה, מעבר מיידי
+            behavior: 'instant' 
           });
-          // ניקוי המיקום אחרי השחזור כדי לא לגלוש שוב בטעות בריענון עמוד רגיל
           sessionStorage.removeItem('scrollPosition');
         }, 50); 
       }
     }
-  }, [loading, filteredRecipes.length]); // התלות החשובה: מופעל כשהטעינה מסתיימת ויש מתכונים
+  }, [loading, filteredRecipes.length]);
 
-  // סינון ומיון
   useEffect(() => {
     let result = [...recipes];
 
@@ -130,7 +121,6 @@ export default function AllRecipes() {
       {/* Header */}
       <header className="bg-gradient-to-b from-amber-100 via-amber-50 to-white sticky top-0 z-40 border-b border-amber-100 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-6">
-          {/* שינינו ל-justify-between כדי שיהיה מקום לכפתור בצד השני */}
           <div className="flex items-center justify-between mb-4">
             
             <div className="flex items-center gap-4">
@@ -146,7 +136,6 @@ export default function AllRecipes() {
               </h1>
             </div>
 
-            {/* הכפתור החדש לטבלת ההמרות */}
             <button 
               onClick={() => router.push('/Conversions')}
               className="bg-white/80 hover:bg-white p-2.5 rounded-full shadow-sm border border-amber-200 text-amber-600 transition-all hover:scale-105 active:scale-95"

@@ -11,7 +11,7 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
     method: '',
     notes: '', 
     imageUrl: '',
-    imageUrls: [], // <--- מערך תמונות חדש
+    imageUrls: [],
     sourceUrl: '',
     createdBy: '' 
   });
@@ -245,7 +245,7 @@ export default function RecipeForm({ recipe, onSave, onCancel, isLoading }) {
           <div className="space-y-4">
             <input
               type="file"
-              multiple // <--- התוספת החשובה! מאפשרת בחירה של כמה קבצים
+              multiple
               accept="image/*"
               onChange={handleFileChange}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"

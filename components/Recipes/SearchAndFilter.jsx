@@ -31,7 +31,6 @@ export default function SearchAndFilter({
       {/* שורת חיפוש וכפתורים */}
       <div className="flex gap-2 relative items-center">
         
-        {/* חיפוש (סגנון Pill מודרני) */}
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
@@ -68,7 +67,6 @@ export default function SearchAndFilter({
           )}
         </button>
 
-        {/* כפתור מיון עגול */}
         <div className="relative">
           <button
             onClick={() => { setSortOpen(!sortOpen); setFilterOpen(false); }}
@@ -81,7 +79,6 @@ export default function SearchAndFilter({
             <ArrowUpDown className="w-5 h-5" />
           </button>
 
-          {/* תפריט מיון קופץ (Dropdown) מעוצב */}
           {sortOpen && (
             <div className="absolute left-0 mt-3 bg-white shadow-xl border border-gray-100 rounded-2xl w-48 z-50 text-right overflow-hidden py-2 animate-in slide-in-from-top-2">
               {[
@@ -106,7 +103,6 @@ export default function SearchAndFilter({
         </div>
       </div>
 
-      {/* פאנל סינון (מגירה נפתחת) */}
       {filterOpen && (
         <div className="bg-white p-5 rounded-3xl shadow-lg border border-gray-100 text-right animate-in slide-in-from-top-2 z-40 relative">
           <div className="flex justify-between items-center mb-4">
@@ -139,7 +135,6 @@ export default function SearchAndFilter({
         </div>
       )}
 
-      {/* תגיות נבחרות (Pills) מתחת לחיפוש */}
       {!filterOpen && selectedTags?.length > 0 && (
         <div className="flex flex-wrap gap-2 justify-start pt-1">
           {selectedTags.map((tag) => (
