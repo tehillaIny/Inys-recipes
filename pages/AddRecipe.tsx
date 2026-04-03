@@ -3,20 +3,27 @@ import { useRouter } from 'next/router';
 import { addRecipe, addTag } from '@/firebaseService';
 import RecipeForm from '@/components/Recipes/RecipeForm';
 import ImportFromUrl from '@/components/Recipes/ImportFromUrl';
-import { ChevronRight, Link as LinkIcon, PenLine } from "lucide-react";
+import ImageRecipeImport from '@/components/Recipes/ImageRecipeImport';
+import { ChevronRight, Link as LinkIcon, PenLine, Camera } from "lucide-react";
 
 export default function AddRecipe() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState('manual'); 
-  const [initialData, setInitialData] = useState(null); // זיכרון לשמירת המתכון שיובא
+  const [mode, setMode] = useState('manual'); // 'manual' | 'import' | 'image'
+  const [initialData, setInitialData] = useState(null); 
 
+  // מעודכן: יודע לזהות גם ייבוא מקישור וגם ייבוא מתמונה מהתפריט התחתון
   useEffect(() => {
-    if (router.isReady && router.query.mode === 'import') {
-      setMode('import');
+    if (router.isReady) {
+      if (router.query.mode === 'import') {
+        setMode('import');
+      } else if (router.query.mode === 'image') {
+        setMode('image');
+      }
     }
   }, [router.isReady, router.query.mode]);
 
+  // הפונקציה ששומרת את המתכון (הייתה חסרה/נמחקה)
   const handleSave = async (formData: any) => {
     setSaving(true);
     try {
@@ -52,41 +59,65 @@ export default function AddRecipe() {
 
       <main className="max-w-lg mx-auto p-4 space-y-6 mt-2">
         
-        <div className="flex bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100">
+        {/* תפריט בחירת מצב הזנה - מותאם לשורה אחת באופן מוחלט */}
+        <div className="flex flex-row items-center w-full bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
            <button
              onClick={() => setMode('manual')}
-             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+             className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold transition-all ${
                mode === 'manual' 
                  ? 'bg-amber-500 text-white shadow-md' 
                  : 'text-gray-500 hover:bg-gray-50'
              }`}
            >
-             <PenLine className="w-4 h-4" />
-             הזנה ידנית
+             <PenLine className="w-4 h-4 sm:w-5 sm:h-5" />
+             <span>ידנית</span>
            </button>
+           
            <button
              onClick={() => setMode('import')}
-             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+             className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold transition-all ${
                mode === 'import' 
                  ? 'bg-amber-500 text-white shadow-md' 
                  : 'text-gray-500 hover:bg-gray-50'
              }`}
            >
-             <LinkIcon className="w-4 h-4" />
-             ייבוא מקישור
+             <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+             <span>מקישור</span>
+           </button>
+
+           <button
+             onClick={() => setMode('image')}
+             className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold transition-all ${
+               mode === 'image' 
+                 ? 'bg-amber-500 text-white shadow-md' 
+                 : 'text-gray-500 hover:bg-gray-50'
+             }`}
+           >
+             <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+             <span>מתמונה</span>
            </button>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
-          {mode === 'manual' ? (
+          {mode === 'manual' && (
             <RecipeForm
               recipe={initialData} 
               onSave={handleSave}
               onCancel={() => router.back()}
               isLoading={saving}
             />
-          ) : (
+          )}
+          {mode === 'import' && (
             <ImportFromUrl 
+              onImport={(data: any) => {
+                setInitialData(data);
+                setMode('manual'); 
+              }}
+              onCancel={() => setMode('manual')}
+            />
+          )}
+          {mode === 'image' && (
+            <ImageRecipeImport 
               onImport={(data: any) => {
                 setInitialData(data);
                 setMode('manual'); 

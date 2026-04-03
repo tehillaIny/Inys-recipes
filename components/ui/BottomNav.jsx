@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { BookOpen, Grid3X3, Plus, Link2, PenLine } from "lucide-react";
+import { BookOpen, Grid3X3, Plus, Link2, PenLine, Camera } from "lucide-react";
 
 export default function BottomNav() {
   const router = useRouter();
@@ -48,30 +48,42 @@ export default function BottomNav() {
         </div>
       </nav>
 
+      {/* התפריט הקופץ */}
       {addMenuOpen && (
         <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setAddMenuOpen(false)}>
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 grid grid-cols-2 gap-4">
+          {/* התיקון כאן: הוספנו pb-24 כדי לדחוף את הכפתורים אל מעל פס הניווט התחתון! */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 pb-24 grid grid-cols-3 gap-2">
+            
             <button
               onClick={() => navigate("/AddRecipe")}
-              className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
+              className="flex flex-col items-center justify-center py-4 px-1 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
-              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">
-                <PenLine className="w-7 h-7 text-amber-600" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm mb-2 group-hover:shadow-md transition-shadow shrink-0">
+                <PenLine className="w-6 h-6 text-amber-600" />
               </div>
-              <span className="font-medium text-gray-800">הזנה ידנית</span>
-              <span className="text-xs text-gray-500 mt-1">כתוב מתכון חדש</span>
+              <span className="font-bold text-gray-800 text-[11px] sm:text-sm text-center leading-tight">הזנה<br/>ידנית</span>
             </button>
             
             <button
               onClick={() => navigate("/AddRecipe?mode=import")}
-              className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
+              className="flex flex-col items-center justify-center py-4 px-1 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
             >
-              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm mb-3 group-hover:shadow-md transition-shadow">
-                <Link2 className="w-7 h-7 text-orange-500" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm mb-2 group-hover:shadow-md transition-shadow shrink-0">
+                <Link2 className="w-6 h-6 text-orange-500" />
               </div>
-              <span className="font-medium text-gray-800">ייבוא מקישור</span>
-              <span className="text-xs text-gray-500 mt-1">העתק מהאינטרנט</span>
+              <span className="font-bold text-gray-800 text-[11px] sm:text-sm text-center leading-tight">ייבוא<br/>מקישור</span>
             </button>
+
+            <button
+              onClick={() => navigate("/AddRecipe?mode=image")}
+              className="flex flex-col items-center justify-center py-4 px-1 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
+            >
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm mb-2 group-hover:shadow-md transition-shadow shrink-0">
+                <Camera className="w-6 h-6 text-amber-500" />
+              </div>
+              <span className="font-bold text-gray-800 text-[11px] sm:text-sm text-center leading-tight">ייבוא<br/>מתמונה</span>
+            </button>
+
           </div>
         </div>
       )}
