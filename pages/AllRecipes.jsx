@@ -21,10 +21,32 @@ export default function AllRecipes() {
   const [sortOrder, setSortOrder] = useState('newest');
 
   useEffect(() => {
-    if (router.isReady && router.query.tag) {
-      setSelectedTags([router.query.tag]);
+    if (router.isReady) {
+      if (router.query.tag) {
+        setSelectedTags([router.query.tag]);
+      } else {
+        const savedQuery = sessionStorage.getItem('searchQuery');
+        const savedTags = sessionStorage.getItem('selectedTags');
+        const savedSort = sessionStorage.getItem('sortOrder');
+
+        if (savedQuery) setSearchQuery(savedQuery);
+        if (savedSort) setSortOrder(savedSort);
+        if (savedTags) {
+          try {
+            setSelectedTags(JSON.parse(savedTags));
+          } catch (e) {
+            console.error("Error parsing tags from sessionStorage", e);
+          }
+        }
+      }
     }
   }, [router.isReady, router.query.tag]);
+
+  useEffect(() => {
+    sessionStorage.setItem('searchQuery', searchQuery);
+    sessionStorage.setItem('selectedTags', JSON.stringify(selectedTags));
+    sessionStorage.setItem('sortOrder', sortOrder);
+  }, [searchQuery, selectedTags, sortOrder]);
 
   const fetchData = async () => {
     try {
