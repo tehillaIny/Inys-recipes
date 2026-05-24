@@ -11,13 +11,24 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [newCategory, setNewCategory] = useState("");
-
+  
   const loadTags = async () => {
     setLoading(true);
     const data = await getTags();
     setTags(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (router.isReady) {
+      const savedSearch = sessionStorage.getItem('categorySearchQuery');
+      if (savedSearch) setSearchQuery(savedSearch);
+    }
+  }, [router.isReady]);
+
+  useEffect(() => {
+    sessionStorage.setItem('categorySearchQuery', searchQuery);
+  }, [searchQuery]);
 
   useEffect(() => { loadTags(); }, []);
 
