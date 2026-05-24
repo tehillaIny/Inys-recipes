@@ -47,6 +47,17 @@ export default function RecipePage() {
     return () => unsubscribe();
   }, [recipeId]);
 
+  useEffect(() => {
+    const handleHardwareBack = (e) => {
+      if (isImageOpen) {
+        e.preventDefault();
+        setIsImageOpen(false);
+      }
+    };
+    window.addEventListener('hardwareBackButton', handleHardwareBack);
+    return () => window.removeEventListener('hardwareBackButton', handleHardwareBack);
+  }, [isImageOpen]);
+
   const handleDelete = async () => {
     if (!recipeId) return;
     if (window.confirm('האם את בטוחה שברצונך למחוק את המתכון הזה?')) {

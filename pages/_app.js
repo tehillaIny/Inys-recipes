@@ -23,10 +23,17 @@ function MyApp({ Component, pageProps }) {
     }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     const handleBackButton = async () => {
       await CapacitorApp.addListener('backButton', () => {
-        if (router.pathname === '/' || router.pathname === '/AllRecipes') {
+        const event = new CustomEvent('hardwareBackButton', { cancelable: true });
+        window.dispatchEvent(event);
+        
+        if (event.defaultPrevented) {
+          return; 
+        }
+
+        if (router.pathname === '/' || router.pathname === '/AllRecipes' || router.pathname === '/Categories') {
           CapacitorApp.exitApp();
         } else {
           router.back();

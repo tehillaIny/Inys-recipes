@@ -11,6 +11,18 @@ export default function BottomNav() {
   const navigate = (path) => {
     setAddMenuOpen(false);
     router.push(path);
+  
+  React.useEffect(() => {
+    const handleHardwareBack = (e) => {
+      if (addMenuOpen) {
+        e.preventDefault(); 
+        setAddMenuOpen(false);
+      }
+    };
+    window.addEventListener('hardwareBackButton', handleHardwareBack);
+    return () => window.removeEventListener('hardwareBackButton', handleHardwareBack);
+  }, [addMenuOpen]);
+
   };
 
   return (
