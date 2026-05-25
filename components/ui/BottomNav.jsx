@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { BookOpen, Grid3X3, Plus, Link2, PenLine, Camera } from "lucide-react";
+import { BookOpen, Grid3X3, Plus, Link2, PenLine, Camera, Calendar, Scale } from "lucide-react";
 
 export default function BottomNav() {
   const router = useRouter();
@@ -11,11 +11,12 @@ export default function BottomNav() {
   const navigate = (path) => {
     setAddMenuOpen(false);
     router.push(path);
-  
+  };
+
   React.useEffect(() => {
     const handleHardwareBack = (e) => {
       if (addMenuOpen) {
-        e.preventDefault(); 
+        e.preventDefault();
         setAddMenuOpen(false);
       }
     };
@@ -23,49 +24,66 @@ export default function BottomNav() {
     return () => window.removeEventListener('hardwareBackButton', handleHardwareBack);
   }, [addMenuOpen]);
 
-  };
-
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-50">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto relative">
+        <div className="flex items-center justify-around h-16 max-w-lg mx-auto relative px-2">
+          
           <button
             onClick={() => navigate("/AllRecipes")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('/AllRecipes') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/AllRecipes') ? 'text-amber-600' : 'text-gray-400'
             }`}
           >
             <BookOpen className="w-5 h-5" />
-            <span className="text-xs mt-1 font-medium">כל המתכונים</span>
+            <span className="text-[10px] sm:text-xs mt-1 font-medium">מתכונים</span>
           </button>
 
-          <div className="flex-1 flex justify-center">
+          <button
+            onClick={() => navigate("/Categories")}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+              isActive('/Categories') ? 'text-amber-600' : 'text-gray-400'
+            }`}
+          >
+            <Grid3X3 className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs mt-1 font-medium">קטגוריות</span>
+          </button>
+
+          <div className="w-12 flex justify-center relative">
             <button
               onClick={() => setAddMenuOpen(true)}
-              className="absolute -top-6 w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+              className="absolute -top-7 w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 z-50"
             >
               <Plus className="w-7 h-7 text-white" />
             </button>
           </div>
 
           <button
-            onClick={() => navigate("/Categories")}
+            onClick={() => navigate("/Events")}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive('/Categories') ? 'text-amber-600' : 'text-gray-500'
+              isActive('/Events') ? 'text-amber-600' : 'text-gray-400'
             }`}
           >
-            <Grid3X3 className="w-5 h-5" />
-            <span className="text-xs mt-1 font-medium">קטגוריות</span>
+            <Calendar className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs mt-1 font-medium">אירועים</span>
           </button>
+
+          <button
+            onClick={() => navigate("/Conversions")}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+              isActive('/Conversions') ? 'text-amber-600' : 'text-gray-400'
+            }`}
+          >
+            <Scale className="w-5 h-5" />
+            <span className="text-[10px] sm:text-xs mt-1 font-medium">המרות</span>
+          </button>
+
         </div>
       </nav>
 
-      {/* התפריט הקופץ */}
       {addMenuOpen && (
         <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setAddMenuOpen(false)}>
-          {/* התיקון כאן: הוספנו pb-24 כדי לדחוף את הכפתורים אל מעל פס הניווט התחתון! */}
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 pb-24 grid grid-cols-3 gap-2">
-            
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 pb-24 grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => navigate("/AddRecipe")}
               className="flex flex-col items-center justify-center py-4 px-1 bg-gray-50 rounded-2xl hover:bg-amber-50 transition-colors group"
@@ -95,7 +113,6 @@ export default function BottomNav() {
               </div>
               <span className="font-bold text-gray-800 text-[11px] sm:text-sm text-center leading-tight">ייבוא<br/>מתמונה</span>
             </button>
-
           </div>
         </div>
       )}

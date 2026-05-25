@@ -32,8 +32,7 @@ useEffect(() => {
         if (event.defaultPrevented) {
           return; 
         }
-
-        if (router.pathname === '/' || router.pathname === '/AllRecipes' || router.pathname === '/Categories') {
+        if (router.pathname === '/' || router.pathname === '/AllRecipes' || router.pathname === '/Categories' || router.pathname === '/Events' || router.pathname === '/Conversions') {
           CapacitorApp.exitApp();
         } else {
           router.back();
