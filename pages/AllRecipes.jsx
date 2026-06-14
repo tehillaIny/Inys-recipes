@@ -20,6 +20,31 @@ export default function AllRecipes() {
   const [selectedTags, setSelectedTags] = useState([]); 
   const [sortOrder, setSortOrder] = useState('newest');
 
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('inys_starred_recipes');
+    if (savedFavorites) {
+      try {
+        setFavoriteIds(JSON.parse(savedFavorites));
+      } catch(e) {
+        console.error("Error parsing favorites", e);
+      }
+    }
+  }, []);
+
+  const toggleFavorite = (recipeId) => {
+    let updatedFavorites;
+    if (favoriteIds.includes(recipeId)) {
+      updatedFavorites = favoriteIds.filter(id => id !== recipeId);
+    } else {
+      updatedFavorites = [...favoriteIds, recipeId];
+    }
+    setFavoriteIds(updatedFavorites);
+    localStorage.setItem('inys_starred_recipes', JSON.stringify(updatedFavorites));
+  };
+
   useEffect(() => {
     if (router.isReady) {
       if (router.query.tag) {
@@ -100,6 +125,10 @@ export default function AllRecipes() {
   useEffect(() => {
     let result = [...recipes];
 
+    if (showFavoritesOnly) {
+      result = result.filter(recipe => favoriteIds.includes(recipe.id));
+    }
+
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(recipe => 
@@ -128,7 +157,7 @@ export default function AllRecipes() {
     });
 
     setFilteredRecipes(result);
-  }, [searchQuery, selectedTags, sortOrder, recipes]);
+  }, [searchQuery, selectedTags, sortOrder, recipes, showFavoritesOnly, favoriteIds]);
 
   if (loading) {
     return (
@@ -180,35 +209,55 @@ export default function AllRecipes() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        
-        <div className="flex justify-start"> 
-           <CsvExportImport recipes={recipes} onImportComplete={fetchData} />
+        {/* Main Content */}
+        <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+          
+          <div className="flex justify-start"> 
+            <CsvExportImport recipes={recipes} onImportComplete={fetchData} />
+          </div>
+
+ <div className="flex justify-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm mx-auto max-w-xs">
+          <button
+            onClick={() => setShowFavoritesOnly(false)}
+            className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${!showFavoritesOnly ? 'bg-amber-500 text-white shadow-md' : 'text-gray-500 hover:bg-amber-50'}`}
+          >
+            כל המתכונים
+          </button>
+          <button
+            onClick={() => setShowFavoritesOnly(true)}
+            className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1 ${showFavoritesOnly ? 'bg-amber-500 text-white shadow-md' : 'text-gray-500 hover:bg-amber-50'}`}
+          >
+            {showFavoritesOnly ? '⭐' : '☆'} מועדפים
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {filteredRecipes.length > 0 ? (
-            filteredRecipes.map(recipe => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))
-          ) : (
-            <div className="col-span-2 text-center py-12">
-              <p className="text-gray-500">לא נמצאו מתכונים תואמים</p>
-              <button 
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedTags([]);
-                  router.push('/AllRecipes', undefined, { shallow: true });
-                }}
-                className="mt-2 text-amber-600 hover:underline text-sm"
-              >
-                נקה סינון
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
+          <div className="grid grid-cols-2 gap-4">
+            {filteredRecipes.length > 0 ? (
+              filteredRecipes.map(recipe => (
+                <RecipeCard
+                key={recipe.id}
+                recipe={recipe} 
+                isFavorite={favoriteIds.includes(recipe.id)}
+                onToggleFavorite={toggleFavorite}
+              />
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-12">
+                <p className="text-gray-500">לא נמצאו מתכונים תואמים</p>
+                <button 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedTags([]);
+                    router.push('/AllRecipes', undefined, { shallow: true });
+                  }}
+                  className="mt-2 text-amber-600 hover:underline text-sm"
+                >
+                  נקה סינון
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }

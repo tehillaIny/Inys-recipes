@@ -2,7 +2,7 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import { getCategoryInfo } from '@/utils/categoryHelper';
 
-export default function RecipeCard({ recipe }) {
+export default function RecipeCard({ recipe, isFavorite, onToggleFavorite }) {
   const router = useRouter();
   
   let imageUrl = '/defualt_img.jpg';
@@ -12,7 +12,6 @@ export default function RecipeCard({ recipe }) {
     imageUrl = recipe.imageUrl.split(',')[0].trim();
   }
 
-  // פונקציית דחיסת תמונות לטעינה מהירה
   const optimizeImage = (url, width) => {
     if (!url || !url.includes('cloudinary.com') || url.includes('/upload/c_')) return url;
     return url.replace('/upload/', `/upload/c_fill,w_${width},q_auto,f_auto/`);
@@ -31,6 +30,21 @@ export default function RecipeCard({ recipe }) {
           onError={(e) => { e.target.src = '/defualt_img.jpg'; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(recipe.id);
+            }}
+            className="absolute top-2 left-2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white hover:scale-110 transition-all"
+          >
+            <span className={`text-lg leading-none ${isFavorite ? 'text-amber-500' : 'text-gray-400'}`}>
+              {isFavorite ? '⭐' : '☆'}
+            </span>
+          </button>
+        )}
+
       </div>
       
       <div className="p-3.5 sm:p-4 flex flex-col flex-1">
