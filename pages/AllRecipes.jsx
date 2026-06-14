@@ -23,6 +23,21 @@ export default function AllRecipes() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState([]);
 
+  const [recentRecipes, setRecentRecipes] = useState([]);
+
+  useEffect(() => {
+    const savedRecent = localStorage.getItem('inys_recent_recipes');
+    if (savedRecent && recipes.length > 0) {
+      const recentIds = JSON.parse(savedRecent);
+      
+      const orderedRecent = recentIds
+        .map(id => recipes.find(r => r.id === id))
+        .filter(Boolean);
+        
+      setRecentRecipes(orderedRecent);
+    }
+  }, [recipes, loading]);
+
   useEffect(() => {
     const savedFavorites = localStorage.getItem('inys_starred_recipes');
     if (savedFavorites) {
@@ -216,7 +231,33 @@ export default function AllRecipes() {
             <CsvExportImport recipes={recipes} onImportComplete={fetchData} />
           </div>
 
- <div className="flex justify-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm mx-auto max-w-xs">
+          {recentRecipes.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-bold text-gray-500 pr-1">נצפו לאחרונה</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x snap-mandatory mask-image">
+              {recentRecipes.map(recipe => (
+                <div 
+                  key={`recent-${recipe.id}`} 
+                  onClick={() => router.push(`/recipe/${recipe.id}`)}
+                  className="w-28 flex-shrink-0 bg-white border border-gray-100 rounded-2xl p-2 shadow-sm cursor-pointer active:scale-95 transition-all snap-start"
+                >
+                  <div className="h-16 w-full rounded-xl bg-gray-100 overflow-hidden mb-1.5">
+                    <img 
+                      src={recipe.imageUrl?.split(',')[0].trim() || recipe.imageUrls?.[0] || '/defualt_img.jpg'} 
+                      alt={recipe.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-xs font-bold text-gray-700 line-clamp-1 text-center">
+                    {recipe.name}
+                  </h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+          
+          <div className="flex justify-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm mx-auto max-w-xs">
           <button
             onClick={() => setShowFavoritesOnly(false)}
             className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${!showFavoritesOnly ? 'bg-amber-500 text-white shadow-md' : 'text-gray-500 hover:bg-amber-50'}`}

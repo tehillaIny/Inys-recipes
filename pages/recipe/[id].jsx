@@ -30,6 +30,7 @@ export default function RecipePage() {
   const [isChecklistMode, setIsChecklistMode] = useState(false);
   const [timerConfig, setTimerConfig] = useState({ active: false, seconds: 0, label: '' });
 
+  // משיכת נתוני המתכון מפיירבייס
   useEffect(() => {
     if (!recipeId) return;
     setIsLoading(true);
@@ -47,6 +48,32 @@ export default function RecipePage() {
     return () => unsubscribe();
   }, [recipeId]);
 
+  // --- קוד חדש: שמירה ל"נצפו לאחרונה" ---
+  useEffect(() => {
+    // מפעילים את השמירה רק אם המתכון כבר נטען בהצלחה ויש לו מזהה (ID)
+    if (recipe && recipe.id) {
+      // 1. שליפת הרשימה הקיימת מהזיכרון
+      const savedRecent = localStorage.getItem('inys_recent_recipes');
+      let recentIds = savedRecent ? JSON.parse(savedRecent) : [];
+
+      // 2. ניקוי כפילויות: אם המתכון כבר היה ברשימה, נסיר אותו כדי שנוכל להקפיץ אותו להתחלה
+      recentIds = recentIds.filter(id => id !== recipe.id);
+
+      // 3. הוספת המתכון הנוכחי לראש המערך (במיקום הראשון)
+      recentIds.unshift(recipe.id);
+
+      // 4. הגבלת הרשימה ל-8 פריטים בלבד
+      if (recentIds.length > 8) {
+        recentIds = recentIds.slice(0, 8);
+      }
+
+      // 5. שמירה חזרה ב-localStorage
+      localStorage.setItem('inys_recent_recipes', JSON.stringify(recentIds));
+    }
+  }, [recipe?.id]); // ה-useEffect הזה ירוץ בכל פעם שה-ID של המתכון משתנה (כלומר כשנכנסים למתכון חדש)
+  // --- סוף קוד חדש ---
+
+  // טיפול בכפתור חזור של מערכת ההפעלה (באנדרואיד)
   useEffect(() => {
     const handleHardwareBack = (e) => {
       if (isImageOpen) {
