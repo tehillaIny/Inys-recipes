@@ -4,7 +4,6 @@ import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/Badge";
-import html2pdf from 'html2pdf.js';
 
 import FloatingTimer from '@/components/ui/FloatingTimer';
 import IngredientsList from '@/components/RecipeView/IngredientsList';
@@ -95,6 +94,7 @@ export default function RecipePage() {
     setIsSharing(true);
     
     try {
+      const html2pdf = (await import('html2pdf.js')).default;
       const element = document.getElementById('recipe-capture-area');
       
       const opt = {
