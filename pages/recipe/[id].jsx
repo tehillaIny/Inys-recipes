@@ -4,6 +4,7 @@ import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/Badge";
+import html2pdf from 'html2pdf.js';
 
 import FloatingTimer from '@/components/ui/FloatingTimer';
 import IngredientsList from '@/components/RecipeView/IngredientsList';
@@ -23,6 +24,7 @@ export default function RecipePage() {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -30,7 +32,6 @@ export default function RecipePage() {
   const [isChecklistMode, setIsChecklistMode] = useState(false);
   const [timerConfig, setTimerConfig] = useState({ active: false, seconds: 0, label: '' });
 
-  // משיכת נתוני המתכון מפיירבייס
   useEffect(() => {
     if (!recipeId) return;
     setIsLoading(true);
@@ -48,32 +49,22 @@ export default function RecipePage() {
     return () => unsubscribe();
   }, [recipeId]);
 
-  // --- קוד חדש: שמירה ל"נצפו לאחרונה" ---
   useEffect(() => {
-    // מפעילים את השמירה רק אם המתכון כבר נטען בהצלחה ויש לו מזהה (ID)
     if (recipe && recipe.id) {
-      // 1. שליפת הרשימה הקיימת מהזיכרון
       const savedRecent = localStorage.getItem('inys_recent_recipes');
       let recentIds = savedRecent ? JSON.parse(savedRecent) : [];
 
-      // 2. ניקוי כפילויות: אם המתכון כבר היה ברשימה, נסיר אותו כדי שנוכל להקפיץ אותו להתחלה
       recentIds = recentIds.filter(id => id !== recipe.id);
-
-      // 3. הוספת המתכון הנוכחי לראש המערך (במיקום הראשון)
       recentIds.unshift(recipe.id);
 
-      // 4. הגבלת הרשימה ל-8 פריטים בלבד
       if (recentIds.length > 8) {
         recentIds = recentIds.slice(0, 8);
       }
 
-      // 5. שמירה חזרה ב-localStorage
       localStorage.setItem('inys_recent_recipes', JSON.stringify(recentIds));
     }
-  }, [recipe?.id]); // ה-useEffect הזה ירוץ בכל פעם שה-ID של המתכון משתנה (כלומר כשנכנסים למתכון חדש)
-  // --- סוף קוד חדש ---
+  }, [recipe?.id]); 
 
-  // טיפול בכפתור חזור של מערכת ההפעלה (באנדרואיד)
   useEffect(() => {
     const handleHardwareBack = (e) => {
       if (isImageOpen) {
@@ -100,11 +91,44 @@ export default function RecipePage() {
   };
 
   const handleShare = async () => {
-    if (navigator.share && recipe) {
-      await navigator.share({ title: recipe.name, url: window.location.href });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('הקישור הועתק ללוח!');
+    if (!recipe) return;
+    setIsSharing(true);
+    
+    try {
+      const element = document.getElementById('recipe-capture-area');
+      
+      const opt = {
+        margin:       [15, 15, 15, 15], 
+        filename:     `מתכון - ${recipe.name}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      const pdfWorker = html2pdf().set(opt).from(element);
+      
+      if (navigator.canShare) {
+        const pdfBlob = await pdfWorker.output('blob');
+        const file = new File([pdfBlob], `${recipe.name}.pdf`, { type: 'application/pdf' });
+        
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: recipe.name,
+            text: `קבלו מתכון מעולה ל${recipe.name}!`,
+            files: [file]
+          });
+          setIsSharing(false);
+          return;
+        }
+      }
+      
+      await pdfWorker.save();
+      
+    } catch (error) {
+      console.error("Error sharing PDF:", error);
+      alert('אירעה שגיאה ביצירת ה-PDF. נסי שוב.');
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -115,19 +139,20 @@ export default function RecipePage() {
   const iconButtonClass = "p-2.5 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all active:scale-95 flex items-center justify-center";
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
+    <div id="recipe-capture-area" className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
 
       {timerConfig.active && (
-        <FloatingTimer 
-          initialSeconds={timerConfig.seconds} 
-          label={timerConfig.label} 
-          onClose={() => setTimerConfig({ active: false, seconds: 0, label: '' })} 
-        />
+        <div data-html2canvas-ignore="true">
+          <FloatingTimer 
+            initialSeconds={timerConfig.seconds} 
+            label={timerConfig.label} 
+            onClose={() => setTimerConfig({ active: false, seconds: 0, label: '' })} 
+          />
+        </div>
       )}
 
-      {/* מודל תמונות */}
       {isImageOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsImageOpen(false)}>
+        <div data-html2canvas-ignore="true" className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsImageOpen(false)}>
           <button className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/30 text-white rounded-full transition-colors cursor-pointer z-[110]" onClick={(e) => { e.stopPropagation(); setIsImageOpen(false); }}><X className="w-8 h-8" /></button>
           {allImages.length > 1 && (
             <>
@@ -144,11 +169,12 @@ export default function RecipePage() {
 
       <div className="relative h-72 sm:h-96 group overflow-hidden bg-gray-100">
         <div className="absolute inset-0 cursor-zoom-in z-10" onClick={() => setIsImageOpen(true)}>
-          <img src={allImages.length > 0 ? optimizeImage(getDisplayImage(allImages[currentImageIndex]), 800, 600) : getDisplayImage()} alt={recipe.name} className="w-full h-full object-cover transition-transform duration-500" onError={(e) => (e.target.src = getDisplayImage())} />
+          <img crossOrigin="anonymous" src={allImages.length > 0 ? optimizeImage(getDisplayImage(allImages[currentImageIndex]), 800, 600) : getDisplayImage()} alt={recipe.name} className="w-full h-full object-cover transition-transform duration-500" onError={(e) => (e.target.src = getDisplayImage())} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
         </div>
+        
         {allImages.length > 1 && (
-           <div className="absolute inset-0 pointer-events-none z-20">
+           <div data-html2canvas-ignore="true" className="absolute inset-0 pointer-events-none z-20">
              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">תמונה {currentImageIndex + 1} מתוך {allImages.length}</div>
              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length); }} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"><ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" /></button>
              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % allImages.length); }} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"><ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" /></button>
@@ -157,15 +183,21 @@ export default function RecipePage() {
              </div>
            </div>
         )}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30 pointer-events-none">
+        
+        <div data-html2canvas-ignore="true" className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30 pointer-events-none">
           <button onClick={() => router.push('/AllRecipes')} className={`${iconButtonClass} pointer-events-auto text-gray-700`} title="חזור לכל המתכונים"><ChevronRight className="w-5 h-5" /></button>
           <div className="flex gap-3 pointer-events-auto">
             <button onClick={() => setIsChecklistMode(!isChecklistMode)} className={`${iconButtonClass} ${isChecklistMode ? 'text-amber-600 bg-amber-50 border-amber-200 ring-2 ring-amber-400/20' : 'text-gray-700'}`} title="מצב צ'קליסט"><ListChecks className="w-5 h-5" /></button>
-            <button onClick={handleShare} className={`${iconButtonClass} text-gray-700`} title="שתף"><Share2 className="w-5 h-5" /></button>
+            
+            <button onClick={handleShare} disabled={isSharing} className={`${iconButtonClass} text-gray-700`} title="שתף כ-PDF">
+              {isSharing ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <Share2 className="w-5 h-5" />}
+            </button>
+            
             <button onClick={() => router.push(`/EditRecipe?id=${recipeId}`)} className={`${iconButtonClass} text-blue-600 hover:text-blue-700 hover:bg-blue-50`} title="ערוך מתכון"><Pencil className="w-5 h-5" /></button>
             <button onClick={handleDelete} disabled={deleting} className={`${iconButtonClass} text-red-500 hover:text-red-600 hover:bg-red-50`} title="מחק מתכון">{deleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}</button>
           </div>
         </div>
+        
         <div className="absolute bottom-0 left-0 right-0 p-6 z-30 pointer-events-none">
           <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg text-right leading-tight">{recipe.name}</h1>
           <div className="flex items-center gap-4 text-white/90 text-sm font-medium pointer-events-auto">
@@ -178,7 +210,7 @@ export default function RecipePage() {
       <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
         
         {isChecklistMode && (
-          <div className="bg-amber-100 text-amber-800 p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top-2 shadow-sm">
+          <div data-html2canvas-ignore="true" className="bg-amber-100 text-amber-800 p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top-2 shadow-sm">
             <ListChecks className="w-5 h-5" /> מצב בישול פעיל - לחצי על שורות כדי לסמן
           </div>
         )}
@@ -205,12 +237,12 @@ export default function RecipePage() {
         </div>
 
         {allImages.length > 1 && (
-          <section>
+          <section data-html2canvas-ignore="true">
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Images className="w-5 h-5 text-amber-500" />כל התמונות</h2>
             <div className="flex flex-wrap gap-3 pb-4">
               {allImages.map((imgUrl, i) => (
                 <div key={i} className={`w-32 h-32 shrink-0 rounded-xl overflow-hidden shadow-sm cursor-pointer group relative border-2 transition-colors ${i === currentImageIndex ? 'border-amber-400' : 'border-gray-100'}`} onClick={() => { setCurrentImageIndex(i); setIsImageOpen(true); }}>
-                  <img src={optimizeImage(getDisplayImage(imgUrl), 200, 200)} alt={`${recipe.name} - ${i + 1}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" onError={(e) => (e.target.src = getDisplayImage())} />
+                  <img crossOrigin="anonymous" src={optimizeImage(getDisplayImage(imgUrl), 200, 200)} alt={`${recipe.name} - ${i + 1}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" onError={(e) => (e.target.src = getDisplayImage())} />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
               ))}
