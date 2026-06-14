@@ -8,6 +8,7 @@ import Layout from "../Layout";
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   
+  // הגדרת Service Worker
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
@@ -23,7 +24,39 @@ function MyApp({ Component, pageProps }) {
     }
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const savedRoute = localStorage.getItem('lastVisitedRoute');
+    const savedTime = localStorage.getItem('lastVisitedTime');
+
+    const isLandingOnHomePage = router.asPath === '/';
+
+    if (isLandingOnHomePage && savedRoute && savedRoute !== '/' && savedTime) {
+      const timeDiff = new Date().getTime() - parseInt(savedTime, 10);
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+      if (hoursDiff < 12) {
+        router.push(savedRoute);
+      } else {
+        localStorage.removeItem('lastVisitedRoute');
+        localStorage.removeItem('lastVisitedTime');
+      }
+    }
+
+    const handleRouteChange = (url) => {
+      localStorage.setItem('lastVisitedRoute', url);
+      localStorage.setItem('lastVisitedTime', new Date().getTime().toString());
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.isReady, router.asPath]);
+
+  useEffect(() => {
     const handleBackButton = async () => {
       await CapacitorApp.addListener('backButton', () => {
         const event = new CustomEvent('hardwareBackButton', { cancelable: true });
