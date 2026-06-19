@@ -4,6 +4,9 @@ import { doc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/Badge";
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 import FloatingTimer from '@/components/ui/FloatingTimer';
 import IngredientsList from '@/components/RecipeView/IngredientsList';
@@ -16,6 +19,20 @@ import {
   ExternalLink, Loader2, Share2, StickyNote, X, Images, ListChecks
 } from "lucide-react";
 
+const blobToBase64 = (blob) =>
+  new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+
+    reader.onloadend = () =>
+      resolve(
+        reader.result.split(",")[1]
+      );
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+
 export default function RecipePage() {
   const router = useRouter();
   const { id: recipeId } = router.query;
@@ -23,7 +40,7 @@ export default function RecipePage() {
   const [recipe, setRecipe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+  const [isSharing, setIsSharing] = useState(false); 
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -89,44 +106,114 @@ export default function RecipePage() {
     }
   };
 
-  const handleShare = async () => {
+const handleShare = async () => {
     if (!recipe) return;
     setIsSharing(true);
     
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('recipe-capture-area');
+      const html2pdf = (await import('html2pdf.js')).default;      
+      let htmlContent = `
+        <div style="width: 800px; background-color: #ffffff; padding: 40px; box-sizing: border-box; direction: ltr;">
+          <div style="direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #000000;">
+            <h1 style="color: #d97706; font-size: 32px; border-bottom: 2px solid #fcd34d; padding-bottom: 10px; margin-bottom: 20px; page-break-after: avoid;">
+              ${recipe.name}
+            </h1>
+      `;
+
+      if (recipe.description) {
+        htmlContent += `<p style="font-size: 18px; margin-bottom: 20px; page-break-inside: avoid;">${recipe.description}</p>`;
+      }
+      htmlContent += `<h3 style="color: #b45309; font-size: 24px; border-bottom: 1px solid #fde68a; padding-bottom: 5px; margin-bottom: 15px; page-break-after: avoid;">מצרכים:</h3>`;      
+      htmlContent += `<div style="margin: 0 0 25px 0; font-size: 18px; line-height: 1.8;">`;
+      if (recipe.ingredients) {
+        const ingArray = Array.isArray(recipe.ingredients) ? recipe.ingredients : (typeof recipe.ingredients === 'string' ? recipe.ingredients.split('\n') : []);
+        ingArray.forEach(ing => {
+          const text = typeof ing === 'string' ? ing : (ing.text || ing.name || '');
+          const cleanText = text.trim();
+          if (cleanText) {
+            if (cleanText.endsWith(':')) {
+              htmlContent += `<div style="font-weight: bold; font-size: 20px; color: #b45309; margin-top: 15px; margin-bottom: 5px; page-break-inside: avoid; text-decoration: underline decoration-[#fcd34d] 2px;">${cleanText}</div>`;
+            } else {
+              htmlContent += `<div style="margin-bottom: 8px; page-break-inside: avoid;">• ${cleanText}</div>`;
+            }
+          }
+        });
+      }
+      htmlContent += `</div>`;
+
+      htmlContent += `<h3 style="color: #b45309; font-size: 24px; border-bottom: 1px solid #fde68a; padding-bottom: 5px; margin-bottom: 15px; page-break-after: avoid;">אופן הכנה:</h3>`;
+      
+      htmlContent += `<div style="margin: 0 0 25px 0; font-size: 18px; line-height: 1.8;">`;
+      if (recipe.method) {
+        const methodArray = Array.isArray(recipe.method) ? recipe.method : (typeof recipe.method === 'string' ? recipe.method.split('\n') : []);
+        let stepCounter = 1;
+        methodArray.forEach(step => {
+          const text = typeof step === 'string' ? step : (step.text || step.instruction || '');
+          const cleanText = text.trim();
+          if (cleanText) {
+            if (cleanText.endsWith(':')) {
+              htmlContent += `<div style="font-weight: bold; font-size: 20px; color: #b45309; margin-top: 15px; margin-bottom: 5px; page-break-inside: avoid; text-decoration: underline decoration-[#fcd34d] 2px;">${cleanText}</div>`;
+            } else {
+              htmlContent += `<div style="margin-bottom: 12px; page-break-inside: avoid;"><strong>${stepCounter}.</strong> ${cleanText}</div>`;
+              stepCounter++;
+            }
+          }
+        });
+      }
+      htmlContent += `</div>`;
+
+      if (recipe.notes) {
+        htmlContent += `<h3 style="color: #b45309; font-size: 24px; border-bottom: 1px solid #fde68a; padding-bottom: 5px; margin-bottom: 15px; page-break-after: avoid;">הערות:</h3>`;
+        htmlContent += `<p style="font-size: 18px; line-height: 1.8; page-break-inside: avoid; background-color: #fdf8e3; padding: 15px; border-right: 4px solid #fcd34d;">${recipe.notes.replace(/\n/g, '<br/>')}</p>`;
+      }
+
+      htmlContent += `</div></div>`;
+
+      const cleanName = recipe.name.replace(/[\\/:*?"<>|]/g, '').trim() || 'recipe';
+      const fileName = `${cleanName}.pdf`;
       
       const opt = {
-        margin:       [15, 15, 15, 15], 
-        filename:     `מתכון - ${recipe.name}.pdf`,
+        margin:       [15, 0, 15, 0], 
+        filename:     fileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] }
       };
 
-      const pdfWorker = html2pdf().set(opt).from(element);
-      
-      if (navigator.canShare) {
-        const pdfBlob = await pdfWorker.output('blob');
-        const file = new File([pdfBlob], `${recipe.name}.pdf`, { type: 'application/pdf' });
+      const worker = html2pdf().set(opt).from(htmlContent);
+
+      if (Capacitor.isNativePlatform()) {
+        const pdfBase64 = await worker.output('datauristring');
+        const base64Data = pdfBase64.split(',')[1]; 
         
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: recipe.name,
-            text: `קבלו מתכון מעולה ל${recipe.name}!`,
-            files: [file]
-          });
-          setIsSharing(false);
-          return;
-        }
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+        
+        await Share.share({
+          title: recipe.name,
+          url: savedFile.uri,
+          dialogTitle: 'שתף מתכון'
+        });
+
+      } else {
+        const pdfBlob = await worker.output('blob');
+        const url = window.URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName; 
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        console.log("5. ההורדה במחשב הושלמה בהצלחה!");
       }
       
-      await pdfWorker.save();
-      
     } catch (error) {
-      console.error("Error sharing PDF:", error);
-      alert('אירעה שגיאה ביצירת ה-PDF. נסי שוב.');
+      alert(`אירעה שגיאה ביצירת ה-PDF:\n${error.message || error}`);
     } finally {
       setIsSharing(false);
     }
@@ -139,20 +226,18 @@ export default function RecipePage() {
   const iconButtonClass = "p-2.5 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all active:scale-95 flex items-center justify-center";
 
   return (
-    <div id="recipe-capture-area" className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
+    <div className="min-h-screen bg-[#FAFAFA] pb-24 text-right" dir="rtl">
 
       {timerConfig.active && (
-        <div data-html2canvas-ignore="true">
-          <FloatingTimer 
-            initialSeconds={timerConfig.seconds} 
-            label={timerConfig.label} 
-            onClose={() => setTimerConfig({ active: false, seconds: 0, label: '' })} 
-          />
-        </div>
+        <FloatingTimer 
+          initialSeconds={timerConfig.seconds} 
+          label={timerConfig.label} 
+          onClose={() => setTimerConfig({ active: false, seconds: 0, label: '' })} 
+        />
       )}
 
       {isImageOpen && (
-        <div data-html2canvas-ignore="true" className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsImageOpen(false)}>
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsImageOpen(false)}>
           <button className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/30 text-white rounded-full transition-colors cursor-pointer z-[110]" onClick={(e) => { e.stopPropagation(); setIsImageOpen(false); }}><X className="w-8 h-8" /></button>
           {allImages.length > 1 && (
             <>
@@ -169,12 +254,12 @@ export default function RecipePage() {
 
       <div className="relative h-72 sm:h-96 group overflow-hidden bg-gray-100">
         <div className="absolute inset-0 cursor-zoom-in z-10" onClick={() => setIsImageOpen(true)}>
-          <img crossOrigin="anonymous" src={allImages.length > 0 ? optimizeImage(getDisplayImage(allImages[currentImageIndex]), 800, 600) : getDisplayImage()} alt={recipe.name} className="w-full h-full object-cover transition-transform duration-500" onError={(e) => (e.target.src = getDisplayImage())} />
+          <img src={allImages.length > 0 ? optimizeImage(getDisplayImage(allImages[currentImageIndex]), 800, 600) : getDisplayImage()} alt={recipe.name} className="w-full h-full object-cover transition-transform duration-500" onError={(e) => (e.target.src = getDisplayImage())} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
         </div>
         
         {allImages.length > 1 && (
-           <div data-html2canvas-ignore="true" className="absolute inset-0 pointer-events-none z-20">
+           <div className="absolute inset-0 pointer-events-none z-20">
              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">תמונה {currentImageIndex + 1} מתוך {allImages.length}</div>
              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length); }} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"><ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" /></button>
              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex((prev) => (prev + 1) % allImages.length); }} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-auto bg-white/90 hover:bg-white text-amber-600 p-3 rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95 border border-amber-100"><ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" /></button>
@@ -184,12 +269,12 @@ export default function RecipePage() {
            </div>
         )}
         
-        <div data-html2canvas-ignore="true" className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30 pointer-events-none">
           <button onClick={() => router.push('/AllRecipes')} className={`${iconButtonClass} pointer-events-auto text-gray-700`} title="חזור לכל המתכונים"><ChevronRight className="w-5 h-5" /></button>
           <div className="flex gap-3 pointer-events-auto">
             <button onClick={() => setIsChecklistMode(!isChecklistMode)} className={`${iconButtonClass} ${isChecklistMode ? 'text-amber-600 bg-amber-50 border-amber-200 ring-2 ring-amber-400/20' : 'text-gray-700'}`} title="מצב צ'קליסט"><ListChecks className="w-5 h-5" /></button>
             
-            <button onClick={handleShare} disabled={isSharing} className={`${iconButtonClass} text-gray-700`} title="שתף כ-PDF">
+            <button onClick={handleShare} disabled={isSharing} className={`${iconButtonClass} text-gray-700`} title="שתף קובץ מתכון">
               {isSharing ? <Loader2 className="w-5 h-5 animate-spin text-amber-500" /> : <Share2 className="w-5 h-5" />}
             </button>
             
@@ -210,7 +295,7 @@ export default function RecipePage() {
       <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
         
         {isChecklistMode && (
-          <div data-html2canvas-ignore="true" className="bg-amber-100 text-amber-800 p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top-2 shadow-sm">
+          <div className="bg-amber-100 text-amber-800 p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 animate-in slide-in-from-top-2 shadow-sm">
             <ListChecks className="w-5 h-5" /> מצב בישול פעיל - לחצי על שורות כדי לסמן
           </div>
         )}
@@ -237,12 +322,12 @@ export default function RecipePage() {
         </div>
 
         {allImages.length > 1 && (
-          <section data-html2canvas-ignore="true">
+          <section>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><Images className="w-5 h-5 text-amber-500" />כל התמונות</h2>
             <div className="flex flex-wrap gap-3 pb-4">
               {allImages.map((imgUrl, i) => (
                 <div key={i} className={`w-32 h-32 shrink-0 rounded-xl overflow-hidden shadow-sm cursor-pointer group relative border-2 transition-colors ${i === currentImageIndex ? 'border-amber-400' : 'border-gray-100'}`} onClick={() => { setCurrentImageIndex(i); setIsImageOpen(true); }}>
-                  <img crossOrigin="anonymous" src={optimizeImage(getDisplayImage(imgUrl), 200, 200)} alt={`${recipe.name} - ${i + 1}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" onError={(e) => (e.target.src = getDisplayImage())} />
+                  <img src={optimizeImage(getDisplayImage(imgUrl), 200, 200)} alt={`${recipe.name} - ${i + 1}`} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" onError={(e) => (e.target.src = getDisplayImage())} />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
               ))}

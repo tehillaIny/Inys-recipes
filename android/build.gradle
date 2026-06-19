@@ -1,7 +1,5 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
-    
+
     repositories {
         google()
         mavenCentral()
@@ -27,14 +25,22 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
 subprojects {
     afterEvaluate { project ->
+        // כיוון Java
         if (project.hasProperty("android")) {
             project.android {
                 compileOptions {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17
                 }
+            }
+        }
+
+        project.tasks.configureEach { task ->
+            if (task.name.startsWith('compile') && task.name.contains('Kotlin')) {
+                task.kotlinOptions.jvmTarget = '17'
             }
         }
     }

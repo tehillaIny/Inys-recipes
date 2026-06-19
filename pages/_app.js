@@ -36,7 +36,7 @@ function MyApp({ Component, pageProps }) {
       const timeDiff = new Date().getTime() - parseInt(savedTime, 10);
       const hoursDiff = timeDiff / (1000 * 60 * 60);
 
-      if (hoursDiff < 12) {
+      if (hoursDiff < 2) {
         router.push(savedRoute);
       } else {
         localStorage.removeItem('lastVisitedRoute');
