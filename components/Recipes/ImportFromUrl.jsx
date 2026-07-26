@@ -13,7 +13,7 @@ export default function ImportFromUrl({ onImport, onCancel }) {
     setLoading(true);
     setError('');
 
-  try {
+    try {
       const response = await CapacitorHttp.post({
         url: 'https://inys-recipes.vercel.app/api/scrape',
         headers: { 'Content-Type': 'application/json' },
@@ -26,27 +26,30 @@ export default function ImportFromUrl({ onImport, onCancel }) {
 
       const data = response.data;
 
+      if (data.geminiError) {
+        alert("הערה: החילוץ החכם לא צלח (" + data.geminiError + "). הטקסט הועבר לשדה התיאור.");
+      }
+
       onImport({
         name: data.name || '',
-        description: '', 
-        ingredients: (data.ingredients || []).join('\n'),
-        method: (data.method || []).join('\n'),
+        description: data.rawText || '', 
+        ingredients: Array.isArray(data.ingredients) ? data.ingredients.join('\n') : (data.ingredients || ''),
+        method: Array.isArray(data.method) ? data.method.join('\n\n') : (data.method || ''),
         imageUrl: data.imageUrl || '',
         sourceUrl: url
       });
 
     } catch (err) {
       console.error(err);
-      alert("ERROR: " + (err.message || JSON.stringify(err))); 
-      setError('לא הצלחנו לחלץ את המתכון מהקישור.');
+      setError('לא הצלחנו לחלץ את המתכון מהקישור, נסה קישור אחר או הזן ידנית.');
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 max-w-md mx-auto">
       <div className="space-y-4">
-        {/* כותרת ואייקון */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-white" />
@@ -55,7 +58,6 @@ export default function ImportFromUrl({ onImport, onCancel }) {
           <p className="text-gray-500 text-sm mt-1">הדבק קישור למתכון ואנחנו נחלץ את הפרטים אוטומטית</p>
         </div>
 
-        {/* שדה קלט */}
         <div className="space-y-2">
           <label htmlFor="url" className="block text-sm font-medium text-gray-700">
             קישור למתכון
@@ -76,7 +78,6 @@ export default function ImportFromUrl({ onImport, onCancel }) {
           </div>
         </div>
 
-        {/* הודעת שגיאה */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2 text-sm text-red-600">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -84,7 +85,6 @@ export default function ImportFromUrl({ onImport, onCancel }) {
           </div>
         )}
 
-        {/* כפתורים */}
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleImport}

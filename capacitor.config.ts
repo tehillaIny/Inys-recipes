@@ -4,6 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.inysrecipes.app',
   appName: 'InysRecipes',
   webDir: 'out'
-};
+}
+;
 
 export default config;
